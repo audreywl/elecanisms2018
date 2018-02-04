@@ -17,7 +17,7 @@
      * Find a button and connect two adjacent legs to the power and ground you just ran. The ground should be connected through a pull-down resistor (I used 10k&#937;).
      * Connect the leg of the button across from ground to the DO digital I/O pin on the Elecanisms board.
      * The end should look like this: 
-     ![my setup](https://github.com/audreywl/elecanisms2018/blinkint/breadboard.jpg)
+     ![ ](https://raw.githubusercontent.com/audreywl/elecanisms2018/master/blinkint/breadboard.jpg)
   5. Setup the Bootloader
      * Follow the instructions on the README at https://github.com/audreywl/elecanisms2018/tree/master/bootloader
        _Again, I've only tested the Linux portion of this guide_
