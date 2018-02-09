@@ -15,6 +15,17 @@
 #define GET_DUTY_MAX        9
 #define READ_ENCODER       10
 
+WORD32 millis = 0;
+
+void __attribute__((interrupt, auto_psv)) _T2Interrupt(void) {
+    IFS0bits.T2IF = 0;      // lower Timer2 interrupt flag
+    millis += 1;
+}
+
+WORD32 get_millis(void) {
+    return millis;
+}
+
 WORD enc_readReg(WORD address) {
     WORD cmd, result;
     cmd.w = 0x4000|address.w; //set 2nd MSB to 1 for a read
@@ -134,6 +145,15 @@ int16_t main(void) {
   // using the OC1 module.
   D8_DIR = OUT;      // configure D8 to be a digital output
   D8 = 0;            // set D8 low
+
+  // Timer 2 Setup
+  T2CON = 0x0030;         // set Timer2 period to 10 ms for debounce
+  PR2 = 0x3E80;           // prescaler 256, match value
+
+  TMR2 = 0;               // set Timer2 to 0
+  IFS0bits.T2IF = 0;      // lower T2 interrupt flag
+  IEC0bits.T2IE = 1;      // enable T2 interrupt
+  T2CONbits.TON = 0;      // make sure T2 isn't on
 
   RPOR = (uint8_t *)&RPOR0;
   RPINR = (uint8_t *)&RPINR0;
