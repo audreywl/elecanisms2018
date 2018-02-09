@@ -25,12 +25,12 @@
 #
 
 import Tkinter as tk
-import usbtest
+import paddletest
 
 class paddletestgui:
 
     def __init__(self):
-        self.dev = paddlemodel.paddlemodel()
+        self.dev = paddletest.paddlemodel()
         if self.dev.dev >= 0:
             self.update_job = None
             self.root = tk.Tk()
@@ -54,7 +54,7 @@ class paddletestgui:
             self.a0_status.pack(side = tk.TOP)
             self.duty_status = tk.Label(self.root, text = 'Duty cycle is currently ??%')
             self.duty_status.pack(side = tk.TOP)
-            self.encoder_status = tk.Label(self.root, text 'Encoder Angle: ?????')
+            self.encoder_status = tk.Label(self.root, text = 'Encoder Angle: ?????')
             self.encoder_status.pack(side = tk.TOP)
             self.update_status()
 
