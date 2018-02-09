@@ -14,7 +14,7 @@ class paddlemodel:
         self.SET_DUTY_VAL = 7
         self.GET_DUTY_VAL = 8
         self.GET_DUTY_MAX = 9
-        self.READ_ENCODER = 10
+        self.ENC_READ_REG = 10
 
         self.dev = usb.core.find(idVendor = 0x6666, idProduct = 0x0003)
         if self.dev is None:
@@ -112,10 +112,18 @@ class paddlemodel:
     def get_duty(self):
         return 100. * self.get_duty_val() / self.get_duty_max()
 
-    def read_encoder(self, address):
+    def enc_readReg(self, address):
         try:
-            ret = self.dev.ctrl_transfer(0xC0, self.READ_ENCODER, address, 0, 2)
+            ret = self.dev.ctrl_transfer(0xC0, self.ENC_READ_REG, address, 0, 2)
         except usb.core.USBError:
             print "Could not send ENC_READ_REG vendor request."
         else:
             return ret
+
+    def get_angle(self):
+        try:
+            ret = self.dev.ctrl_transfer(0xC0, self.ENC_READ_REG, 0x3FFF, 0, 2)
+        except usb.core.USBError:
+            print "Could not send ENC_READ_REG vendor request."
+        else:
+            return (int(ret[0]) + 256 * int(ret[1])) & 0x3FFF

@@ -3,6 +3,20 @@
 #include <stdio.h>
 #include "usb.h"
 
+#define ENC_MISO            D1
+#define ENC_MOSI            D0
+#define ENC_SCK             D2
+#define ENC_CSn             D3
+
+#define ENC_MISO_DIR        D1_DIR
+#define ENC_MOSI_DIR        D0_DIR
+#define ENC_SCK_DIR         D2_DIR
+#define ENC_CSn_DIR         D3_DIR
+
+#define ENC_MISO_RP         D1_RP
+#define ENC_MOSI_RP         D0_RP
+#define ENC_SCK_RP          D2_RP
+
 #define TOGGLE_LED1         0
 #define TOGGLE_LED2         1
 #define TOGGLE_LED3         2
@@ -13,31 +27,53 @@
 #define SET_DUTY_VAL        7
 #define GET_DUTY_VAL        8
 #define GET_DUTY_MAX        9
-#define READ_ENCODER       10
+#define ENC_READ_REG       10
+
+uint16_t even_parity(uint16_t v) {
+    v ^= v >> 8;
+    v ^= v >> 4;
+    v ^= v >> 2;
+    v ^= v >> 1;
+    return v & 1;
+}
 
 WORD enc_readReg(WORD address) {
     WORD cmd, result;
-    cmd.w = 0x4000|address.w; //set 2nd MSB to 1 for a read
-    cmd.w |= parity(cmd.w)<<15; //calculate even parity for
+    uint16_t temp;
 
-    //lower the chip select line to start transfer
-    D3 = 0;
-    SPI1BUF = (uint16_t)cmd.b[1];
-    while (SPI1STATbits.SPIRBF ==0) {}
-    result.b[1] = (uint8_t)SPI1BUF;
-    SPI1BUF = (uint16_t)cmd.b[0];
-    while (SPI1STATbits.SPIRBF ==0) {}
-    result.b[0] = (uint8_t)SPI1BUF;
-    D3 = 1;
+    cmd.w = 0x4000 | address.w;         // set 2nd MSB to 1 for a read
+    cmd.w |= even_parity(cmd.w) << 15;
 
-    D3 = 0;
-    SPI1BUF = 0;
-    while (SPI1STATbits.SPIRBF ==0) {}
-    result.b[1] = (uint8_t)SPI1BUF;
-    SPI1BUF = 0;
-    while (SPI1STATbits.SPIRBF ==0) {}
-    result.b[0] = (uint8_t)SPI1BUF;
-    D3 = 1;
+    ENC_CSn = 0;
+
+    SPI2BUF = (uint16_t)cmd.b[1];
+    while (SPI2STATbits.SPIRBF == 0) {}
+    temp = SPI2BUF;
+
+    SPI2BUF = (uint16_t)cmd.b[0];
+    while (SPI2STATbits.SPIRBF == 0) {}
+    temp = SPI2BUF;
+
+    ENC_CSn = 1;
+
+    __asm__("nop");     // p.12 of the AS5048 datasheet specifies a minimum
+    __asm__("nop");     //   high time of CSn between transmission of 350ns
+    __asm__("nop");     //   which is 5.6 Tcy, so do nothing for 6 Tcy.
+    __asm__("nop");
+    __asm__("nop");
+    __asm__("nop");
+
+    ENC_CSn = 0;
+
+    SPI2BUF = 0;
+    while (SPI2STATbits.SPIRBF == 0) {}
+    result.b[1] = (uint8_t)SPI2BUF;
+
+    SPI2BUF = 0;
+    while (SPI2STATbits.SPIRBF == 0) {}
+    result.b[0] = (uint8_t)SPI2BUF;
+
+    ENC_CSn = 1;
 
     return result;
 }
@@ -103,7 +139,7 @@ void vendor_requests(void) {
             BD[EP0IN].bytecount = 2;
             BD[EP0IN].status = UOWN | DTS | DTSEN;
             break;
-        case READ_ENCODER:
+        case ENC_READ_REG:
             temp = enc_readReg(USB_setup.wValue);
             BD[EP0IN].address[0] = temp.b[0];
             BD[EP0IN].address[1] = temp.b[1];
@@ -122,32 +158,32 @@ int16_t main(void) {
 
   init_elecanisms();
 
-  D0_DIR = OUT; //MOSI
-  D1_DIR = IN;  //MISO
-  D2_DIR = OUT; //SCK
-  D3_DIR = OUT; //NCS
-
-  //ENC_NCS = 1; //Raise the chip select line (it's active low).
-  D3 = 1;
-
   // Configure pin D8 to produce a 1-kHz PWM signal with a 25% duty cycle
   // using the OC1 module.
   D8_DIR = OUT;      // configure D8 to be a digital output
   D8 = 0;            // set D8 low
 
+  // Configure encoder pins and connect them to SPI2
+  ENC_CSn_DIR = OUT; ENC_CSn = 1;
+  ENC_SCK_DIR = OUT; ENC_SCK = 0;
+  ENC_MOSI_DIR = OUT; ENC_MOSI = 0;
+  ENC_MISO_DIR = IN;
+
   RPOR = (uint8_t *)&RPOR0;
   RPINR = (uint8_t *)&RPINR0;
 
   __builtin_write_OSCCONL(OSCCON & 0xBF);
-  RPOR[D0_RP] = MOSI1_RP; // setup SPI pins w/oscillator
-  RPINR[MISO1_RP] = D1_RP;
-  RPOR[D2_RP] = SCK1OUT_RP;
+  RPINR[MISO2_RP] = ENC_MISO_RP;
+  RPOR[ENC_MOSI_RP] = MOSI2_RP;
+  RPOR[ENC_SCK_RP] = SCK2OUT_RP;
   RPOR[D8_RP] = OC1_RP;  // connect the OC1 module output to pin D8
+
   __builtin_write_OSCCONL(OSCCON | 0x40);
 
-  SPI1CON1 = 0x0032;              // SPI mode = 1, SCK freq = 1 MHz
-  SPI1CON2 = 0;
-  SPI1STAT = 0x8000;
+  SPI2CON1 = 0x003B;              // SPI2 mode = 1, SCK freq = 8 MHz
+  SPI2CON2 = 0;
+  SPI2STAT = 0x8000;
+
 
   OC1CON1 = 0x1C06;   // configure OC1 module to use the peripheral
                       //   clock (i.e., FCY, OCTSEL<2:0> = 0b111) and
@@ -156,7 +192,7 @@ int16_t main(void) {
   OC1CON2 = 0x001F;   // configure OC1 module to syncrhonize to itself
                       //   (i.e., OCTRIG = 0 and SYNCSEL<4:0> = 0b11111)
 
-  OC1RS = (uint16_t)(FCY / 1e3 - 1.);     // configure period register to
+  OC1RS = (uint16_t)(FCY / 2e3 - 1.);     // configure period register to
                                           //   get a frequency of 1kHz
   OC1R = OC1RS >> 2;  // configure duty cycle to 25% (i.e., period / 4)
   OC1TMR = 0;         // set OC1 timer count to 0
