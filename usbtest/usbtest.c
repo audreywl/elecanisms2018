@@ -3,24 +3,24 @@
 ** All rights reserved.
 **
 ** Redistribution and use in source and binary forms, with or without
-** modification, are permitted provided that the following conditions are met: 
-** 
-**     1. Redistributions of source code must retain the above copyright 
-**        notice, this list of conditions and the following disclaimer. 
-**     2. Redistributions in binary form must reproduce the above copyright 
-**        notice, this list of conditions and the following disclaimer in the 
-**        documentation and/or other materials provided with the distribution. 
+** modification, are permitted provided that the following conditions are met:
 **
-** THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-** AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
-** IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
-** ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE 
-** LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
-** CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
-** SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
-** INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
-** CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-** ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+**     1. Redistributions of source code must retain the above copyright
+**        notice, this list of conditions and the following disclaimer.
+**     2. Redistributions in binary form must reproduce the above copyright
+**        notice, this list of conditions and the following disclaimer in the
+**        documentation and/or other materials provided with the distribution.
+**
+** THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+** AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+** IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+** ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+** LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+** CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+** SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+** INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+** CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+** ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 ** POSSIBILITY OF SUCH DAMAGE.
 */
 
@@ -112,24 +112,24 @@ int16_t main(void) {
 
     // Configure pin D13 to produce a 1-kHz PWM signal with a 25% duty cycle
     // using the OC1 module.
-    D13_DIR = OUT;      // configure D13 to be a digital output
-    D13 = 0;            // set D13 low
+    D8_DIR = OUT;      // configure D13 to be a digital output
+    D8 = 0;            // set D13 low
 
     RPOR = (uint8_t *)&RPOR0;
     RPINR = (uint8_t *)&RPINR0;
 
     __builtin_write_OSCCONL(OSCCON & 0xBF);
-    RPOR[D13_RP] = OC1_RP;  // connect the OC1 module output to pin D13
+    RPOR[D8_RP] = OC1_RP;  // connect the OC1 module output to pin D13
     __builtin_write_OSCCONL(OSCCON | 0x40);
 
-    OC1CON1 = 0x1C06;   // configure OC1 module to use the peripheral 
-                        //   clock (i.e., FCY, OCTSEL<2:0> = 0b111) and 
+    OC1CON1 = 0x1C06;   // configure OC1 module to use the peripheral
+                        //   clock (i.e., FCY, OCTSEL<2:0> = 0b111) and
                         //   and to operate in edge-aligned PWM mode
                         //   (OCM<2:0> = 0b110)
     OC1CON2 = 0x001F;   // configure OC1 module to syncrhonize to itself
                         //   (i.e., OCTRIG = 0 and SYNCSEL<4:0> = 0b11111)
 
-    OC1RS = (uint16_t)(FCY / 1e3 - 1.);     // configure period register to 
+    OC1RS = (uint16_t)(FCY / 1e3 - 1.);     // configure period register to
                                             //   get a frequency of 1kHz
     OC1R = OC1RS >> 2;  // configure duty cycle to 25% (i.e., period / 4)
     OC1TMR = 0;         // set OC1 timer count to 0
@@ -148,4 +148,3 @@ int16_t main(void) {
 #endif
     }
 }
-

@@ -3,24 +3,24 @@
 ## All rights reserved.
 ##
 ## Redistribution and use in source and binary forms, with or without
-## modification, are permitted provided that the following conditions are met: 
-## 
-##     1. Redistributions of source code must retain the above copyright 
-##        notice, this list of conditions and the following disclaimer. 
-##     2. Redistributions in binary form must reproduce the above copyright 
-##        notice, this list of conditions and the following disclaimer in the 
-##        documentation and/or other materials provided with the distribution. 
+## modification, are permitted provided that the following conditions are met:
 ##
-## THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-## AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
-## IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
-## ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE 
-## LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
-## CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
-## SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
-## INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
-## CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-## ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+##     1. Redistributions of source code must retain the above copyright
+##        notice, this list of conditions and the following disclaimer.
+##     2. Redistributions in binary form must reproduce the above copyright
+##        notice, this list of conditions and the following disclaimer in the
+##        documentation and/or other materials provided with the distribution.
+##
+## THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+## AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+## IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+## ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+## LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+## CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+## SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+## INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+## CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+## ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 ## POSSIBILITY OF SUCH DAMAGE.
 #
 
@@ -52,6 +52,8 @@ class usbtestgui:
             self.sw3_status.pack(side = tk.TOP)
             self.a0_status = tk.Label(self.root, text = 'A0 is currently ????')
             self.a0_status.pack(side = tk.TOP)
+            self.duty_status = tk.Label(self.root, text = 'Duty cycle is currently ??%')
+            self.duty_status.pack(side = tk.TOP)
             self.update_status()
 
     def set_duty_callback(self, value):
@@ -62,6 +64,7 @@ class usbtestgui:
         self.sw2_status.configure(text = 'SW2 is currently {!s}'.format(self.dev.read_sw2()))
         self.sw3_status.configure(text = 'SW3 is currently {!s}'.format(self.dev.read_sw3()))
         self.a0_status.configure(text = 'A0 is currently {:04d}'.format(self.dev.read_a0()))
+        self.duty_status.configure(text = 'Duty cycle is currently {0:.0f}%'.format(self.dev.get_duty()))
         self.update_job = self.root.after(50, self.update_status)
 
     def shut_down(self):
@@ -72,4 +75,3 @@ class usbtestgui:
 if __name__=='__main__':
     gui = usbtestgui()
     gui.root.mainloop()
-
