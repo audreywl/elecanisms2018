@@ -217,23 +217,24 @@ int16_t main(void) {
   ENC_MOSI_DIR = OUT; ENC_MOSI = 0;
   ENC_MISO_DIR = IN;
 
-  // Timer 2 Setup
-  T2CON = 0x0000;         // set Timer2 period to 1 ms
-  PR2 = 0x100;           // prescaler 8, match value 2000
+  // Timer 2 Setup for timestamp
+  T2CON = 0x0000;         // set Timer2 prescaler to 1
+  PR2 = 0x100;            // Period reg 16, resultant period is Tcy * 16, 1us
 
   TMR2 = 0;               // set Timer2 to 0
   IFS0bits.T2IF = 0;      // lower T2 interrupt flag
   IEC0bits.T2IE = 1;      // enable T2 interrupt
   T2CONbits.TON = 1;      // Start T2
 
-  // Timer 3 Setup
-  T3CON = 0x0000;         // prescale 1:1, timer off, use system clock
-  PR3 = (uint16_t)(FCY / 4e3 - 1.);           // configure timer period register to same as OC1 and 2 periods
+  // ADC setup for higher-speed conversion for current measurement
+  AD1CON1bits.SSRC = 3;   // Set conversion trigger to internal timer
+  AD1CON2 = 0;            // Don't use an ADC reading buffer, leave volt ref as Vcc -> Vdd
+  AD1CON3bits.ADRC = 0;   // Use device clock, not separate RC osc.
+  AD1CON3bits.SAMC = 4;   // Set sampling time to 4 TAD a/d converter periods
+  AD1CON3bits.ADCS = 1;   // Set TAD to 1 TCY
 
 
-  IFS0bits.T3IF = 0;      // lower T3 interrupt flag
-  IEC0bits.T3IE = 1;      // enable T3 interrupt
-  T3CONbits.TON = 1;      // Start T3
+
 
   RPOR = (uint8_t *)&RPOR0;
   RPINR = (uint8_t *)&RPINR0;
