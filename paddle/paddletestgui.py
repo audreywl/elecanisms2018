@@ -45,8 +45,8 @@ class paddletestgui:
             tk.Button(fm, text = 'LED2', command = self.dev.toggle_led2).pack(side = tk.LEFT)
             tk.Button(fm, text = 'LED3', command = self.dev.toggle_led3).pack(side = tk.LEFT)
             fm.pack(side = tk.TOP)
-            dutyslider = tk.Scale(self.root, from_ = 0, to = 100, orient = tk.HORIZONTAL, showvalue = tk.FALSE, command = self.set_duty_callback)
-            dutyslider.set(25)
+            dutyslider = tk.Scale(self.root, from_ = -25, to = 25, orient = tk.HORIZONTAL, showvalue = tk.FALSE, command = self.set_duty_callback)
+            dutyslider.set(0)
             dutyslider.pack(side = tk.TOP)
             self.sw1_status = tk.Label(self.root, text = 'SW1 is currently ?')
             self.sw1_status.pack(side = tk.TOP)
@@ -60,6 +60,8 @@ class paddletestgui:
             self.duty_status.pack(side = tk.TOP)
             self.millis_status = tk.Label(self.root, text = 'Program Time: ?????')
             self.millis_status.pack(side = tk.TOP)
+            self.encoder_status = tk.Label(self.root, text = 'Encoder Angle: ?????')
+            self.encoder_status.pack(side = tk.TOP)
             self.update_status()
 
     def set_duty_callback(self, value):
@@ -72,6 +74,7 @@ class paddletestgui:
         self.a0_status.configure(text = 'A0 is currently {:04d}'.format(self.dev.read_a0()))
         self.duty_status.configure(text = 'Duty cycle is currently {0:.0f}%'.format(self.dev.get_duty()))
         self.millis_status.configure(text = 'Program Time: {:08d}'.format(self.update_prog_time()))
+        self.encoder_status.configure(text = 'Encoder Angle: {0:.0f}'.format(self.dev.get_angle()))
         self.update_job = self.root.after(50, self.update_status)
 
     def shut_down(self):
