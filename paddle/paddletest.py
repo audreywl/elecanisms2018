@@ -11,10 +11,13 @@ class paddlemodel:
         self.READ_SW2 = 4
         self.READ_SW3 = 5
         self.READ_A0 = 6
-        self.SET_DUTY_VAL = 7
-        self.GET_DUTY_VAL = 8
-        self.GET_DUTY_MAX = 9
-        self.ENC_READ_REG = 10
+        self.SET_DUTY_VAL_FORWARD = 7
+        self.GET_DUTY_VAL_FORWARD = 8
+        self.GET_DUTY_MAX_FORWARD = 9
+        self.SET_DUTY_VAL_REVERSE = 10
+        self.GET_DUTY_VAL_REVERSE = 11
+        self.GET_DUTY_MAX_REVERSE = 12
+        self.ENC_READ_REG = 13
 
         self.dev = usb.core.find(idVendor = 0x6666, idProduct = 0x0003)
         if self.dev is None:
@@ -83,42 +86,75 @@ class paddlemodel:
         else:
             return int(ret[0]) + 256 * int(ret[1])
 
-    def set_duty_val(self, val):
+    def set_duty_val_forward(self, val):
         try:
-            self.dev.ctrl_transfer(0x40, self.SET_DUTY_VAL, val)
+            self.dev.ctrl_transfer(0x40, self.SET_DUTY_VAL_FORWARD, val)
         except usb.core.USBError:
             print "Could not send SET_DUTY_VAL vendor request."
 
-    def get_duty_val(self):
+    def set_duty_val_reverse(self, val):
         try:
-            ret = self.dev.ctrl_transfer(0xC0, self.GET_DUTY_VAL, 0, 0, 2)
+            self.dev.ctrl_transfer(0x40, self.SET_DUTY_VAL_REVERSE, val)
+        except usb.core.USBError:
+            print "Could not send SET_DUTY_VAL vendor request."
+
+    def get_duty_val_reverse(self):
+        try:
+            ret = self.dev.ctrl_transfer(0xC0, self.GET_DUTY_VAL_REVERSE, 0, 0, 2)
+        except usb.core.USBError:
+            print "Could not send GET_DUTY_VAL vendor request."
+        else:
+            return int(ret[0]) + 256 * int(ret[1])
+    def get_duty_val_forward(self):
+        try:
+            ret = self.dev.ctrl_transfer(0xC0, self.GET_DUTY_VAL_FORWARD, 0, 0, 2)
         except usb.core.USBError:
             print "Could not send GET_DUTY_VAL vendor request."
         else:
             return int(ret[0]) + 256 * int(ret[1])
 
-    def get_duty_max(self):
+    def get_duty_max_forward(self):
         try:
-            ret = self.dev.ctrl_transfer(0xC0, self.GET_DUTY_MAX, 0, 0, 2)
+            ret = self.dev.ctrl_transfer(0xC0, self.GET_DUTY_MAX_FORWARD, 0, 0, 2)
+        except usb.core.USBError:
+            print "Could not send GET_DUTY_MAX vendor request."
+        else:
+            return int(ret[0]) + 256 * int(ret[1])
+    def get_duty_max_reverse(self):
+        try:
+            ret = self.dev.ctrl_transfer(0xC0, self.GET_DUTY_MAX_REVERSE, 0, 0, 2)
         except usb.core.USBError:
             print "Could not send GET_DUTY_MAX vendor request."
         else:
             return int(ret[0]) + 256 * int(ret[1])
 
     def set_duty(self, duty_cycle):
-        val = int(round(duty_cycle * self.get_duty_max() / 100.))
-        self.set_duty_val(val)
+        if duty_cycle >= 0:
+            val = int(round(duty_cycle * self.get_duty_max_forward() / 100.))
+            self.set_duty_val_forward(val)
+            self.set_duty_val_reverse(0)
+        elif duty_cycle < 0:
+            val = int(round(-duty_cycle * self.get_duty_max_reverse() / 100.))
+            self.set_duty_val_reverse(val)
+            self.set_duty_val_forward(0)
+
 
     def get_duty(self):
-        return 100. * self.get_duty_val() / self.get_duty_max()
-
-    def enc_readReg(self, address):
-        try:
-            ret = self.dev.ctrl_transfer(0xC0, self.ENC_READ_REG, address, 0, 2)
-        except usb.core.USBError:
-            print "Could not send ENC_READ_REG vendor request."
+        forward_duty = 100. * self.get_duty_val_forward() / self.get_duty_max_forward()
+        if forward_duty > 0:
+            return forward_duty
+        elif type(self.get_duty_val_reverse) is int:
+            return -100. * self.get_duty_val_reverse() / self.get_duty_max_reverse()
         else:
-            return ret
+            return 0.
+
+    # def enc_readReg(self, address):
+    #     try:
+    #         ret = self.dev.ctrl_transfer(0xC0, self.ENC_READ_REG, address, 0, 2)
+    #     except usb.core.USBError:
+    #         print "Could not send ENC_READ_REG vendor request."
+    #     else:
+    #         return ret
 
     def get_angle(self):
         try:

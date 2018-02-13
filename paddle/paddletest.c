@@ -24,10 +24,13 @@
 #define READ_SW2            4
 #define READ_SW3            5
 #define READ_A0             6
-#define SET_DUTY_VAL        7
-#define GET_DUTY_VAL        8
-#define GET_DUTY_MAX        9
-#define ENC_READ_REG       10
+#define SET_DUTY_VAL_FORWARD        7
+#define GET_DUTY_VAL_FORWARD        8
+#define GET_DUTY_MAX_FORWARD       9
+#define SET_DUTY_VAL_REVERSE        10
+#define GET_DUTY_VAL_REVERSE        11
+#define GET_DUTY_MAX_REVERSE        12
+#define ENC_READ_REG       13
 
 uint16_t even_parity(uint16_t v) {
     v ^= v >> 8;
@@ -120,20 +123,39 @@ void vendor_requests(void) {
             BD[EP0IN].bytecount = 2;
             BD[EP0IN].status = UOWN | DTS | DTSEN;
             break;
-        case SET_DUTY_VAL:
+        case SET_DUTY_VAL_FORWARD:
             OC1R = USB_setup.wValue.w;
             BD[EP0IN].bytecount = 0;
             BD[EP0IN].status = UOWN | DTS | DTSEN;
             break;
-        case GET_DUTY_VAL:
+        case SET_DUTY_VAL_REVERSE:
+            OC2R = USB_setup.wValue.w;
+            BD[EP0IN].bytecount = 0;
+            BD[EP0IN].status = UOWN | DTS | DTSEN;
+            break;
+        case GET_DUTY_VAL_FORWARD:
             temp.w = OC1R;
             BD[EP0IN].address[0] = temp.b[0];
             BD[EP0IN].address[1] = temp.b[1];
             BD[EP0IN].bytecount = 2;
             BD[EP0IN].status = UOWN | DTS | DTSEN;
             break;
-        case GET_DUTY_MAX:
+        case GET_DUTY_VAL_REVERSE:
+            temp.w = OC2R;
+            BD[EP0IN].address[0] = temp.b[0];
+            BD[EP0IN].address[1] = temp.b[1];
+            BD[EP0IN].bytecount = 2;
+            BD[EP0IN].status = UOWN | DTS | DTSEN;
+            break;
+        case GET_DUTY_MAX_FORWARD:
             temp.w = OC1RS;
+            BD[EP0IN].address[0] = temp.b[0];
+            BD[EP0IN].address[1] = temp.b[1];
+            BD[EP0IN].bytecount = 2;
+            BD[EP0IN].status = UOWN | DTS | DTSEN;
+            break;
+        case GET_DUTY_MAX_REVERSE:
+            temp.w = OC2RS;
             BD[EP0IN].address[0] = temp.b[0];
             BD[EP0IN].address[1] = temp.b[1];
             BD[EP0IN].bytecount = 2;
@@ -162,6 +184,8 @@ int16_t main(void) {
   // using the OC1 module.
   D8_DIR = OUT;      // configure D8 to be a digital output
   D8 = 0;            // set D8 low
+  D7_DIR = OUT;      // configure D7 to be a digital output
+  D7 = 0;            // set D7 low
 
   // Configure encoder pins and connect them to SPI2
   ENC_CSn_DIR = OUT; ENC_CSn = 1;
@@ -177,6 +201,7 @@ int16_t main(void) {
   RPOR[ENC_MOSI_RP] = MOSI2_RP;
   RPOR[ENC_SCK_RP] = SCK2OUT_RP;
   RPOR[D8_RP] = OC1_RP;  // connect the OC1 module output to pin D8
+  RPOR[D7_RP] = OC2_RP;  // connect the OC1 module output to pin D8
 
   __builtin_write_OSCCONL(OSCCON | 0x40);
 
@@ -191,11 +216,22 @@ int16_t main(void) {
                       //   (OCM<2:0> = 0b110)
   OC1CON2 = 0x001F;   // configure OC1 module to syncrhonize to itself
                       //   (i.e., OCTRIG = 0 and SYNCSEL<4:0> = 0b11111)
+  OC2CON1 = 0x1C06;   // configure OC2 module to use the peripheral
+                      //   clock (i.e., FCY, OCTSEL<2:0> = 0b111) and
+                      //   and to operate in edge-aligned PWM mode
+                      //   (OCM<2:0> = 0b110)
+  OC2CON2 = 0x001F;   // configure OC2 module to syncrhonize to itself
+                      //   (i.e., OCTRIG = 0 and SYNCSEL<4:0> = 0b11111)
 
   OC1RS = (uint16_t)(FCY / 2e3 - 1.);     // configure period register to
-                                          //   get a frequency of 1kHz
-  OC1R = OC1RS >> 2;  // configure duty cycle to 25% (i.e., period / 4)
+                                          //   get a frequency of 2kHz
+  OC2RS = (uint16_t)(FCY / 2e3 - 1.);     // configure period register to
+                                          //   get a frequency of 2kHz
+  OC1R = 0;  // configure duty cycle to 25% (i.e., period / 4)
+  OC2R = 0;
+
   OC1TMR = 0;         // set OC1 timer count to 0
+  OC2TMR = 0;         // set OC1 timer count to 0
 
   USB_setup_vendor_callback = vendor_requests;
   init_usb();
