@@ -41,7 +41,8 @@ class paddlemodel:
 
     def update_prog_time(self):
         self.last_prog_time = self.prog_time    # Transfer last one
-        self.prog_time = self.dev.get_micros()  # Read new OWNER
+        self.prog_time = self.get_micros()  # Read new
+        if (self.prog_time == None): return 0
         if self.prog_time > self.last_prog_time:
             self.total_prog_time += self.prog_time - self.last_prog_time
         else:
