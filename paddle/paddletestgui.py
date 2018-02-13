@@ -84,9 +84,8 @@ class paddletestgui:
         self.root.after_cancel(self.update_job)
         self.root.destroy()
         self.dev.close()
-
 def run_test():
-    with open('spindown_log2.csv', 'wb') as csvfile:
+    with open('spindown_log4.csv', 'w') as csvfile:
         writer = csv.writer(csvfile)
         dev = paddletest.paddlemodel()
 
@@ -105,7 +104,7 @@ def run_test():
 
 def log_data(dev, writer): # Daemon function that will log data as often as possible
     while True:
-        writer.writerow([dev.get_micros(), dev.get_angle()])
+        writer.writerow([dev.update_prog_time(), dev.get_angle()])
 
 if __name__=='__main__':
     run_test();
