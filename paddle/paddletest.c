@@ -31,18 +31,18 @@
 #define GET_DUTY_VAL_REVERSE        11
 #define GET_DUTY_MAX_REVERSE        12
 #define ENC_READ_REG       13
-#define GET_MILLIS         14
+#define GET_MICROS         14
 
-WORD millis;
+WORD micros;
 
 void __attribute__((interrupt, auto_psv)) _T2Interrupt(void) {
     IFS0bits.T2IF = 0;      // lower Timer2 interrupt flag
-    millis.w += 1;
+    micros.w += 1;
     LED1 = !LED1;
 }
 
-WORD get_millis(void) {
-    return millis;
+WORD get_micros(void) {
+    return micros;
 }
 
 uint16_t even_parity(uint16_t v) {
@@ -181,8 +181,8 @@ void vendor_requests(void) {
             BD[EP0IN].bytecount = 2;
             BD[EP0IN].status = UOWN | DTS | DTSEN;
             break;
-        case GET_MILLIS:
-            temp = get_millis();
+        case GET_MICROS:
+            temp = get_micros();
             BD[EP0IN].address[0] = temp.b[0];
             BD[EP0IN].address[1] = temp.b[1];
             BD[EP0IN].bytecount = 2;
@@ -214,8 +214,8 @@ int16_t main(void) {
   ENC_MISO_DIR = IN;
 
   // Timer 2 Setup
-  T2CON = 0x0010;         // set Timer2 period to 1 ms
-  PR2 = 0x7D0;           // prescaler 8, match value 2000
+  T2CON = 0x0000;         // set Timer2 period to 1 ms
+  PR2 = 0x100;           // prescaler 8, match value 2000
 
   TMR2 = 0;               // set Timer2 to 0
   IFS0bits.T2IF = 0;      // lower T2 interrupt flag

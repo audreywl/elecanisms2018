@@ -18,7 +18,7 @@ class paddlemodel:
         self.GET_DUTY_VAL_REVERSE = 11
         self.GET_DUTY_MAX_REVERSE = 12
         self.ENC_READ_REG = 13
-        self.GET_MILLIS = 14
+        self.GET_MICROS = 14
 
         self.dev = usb.core.find(idVendor = 0x6666, idProduct = 0x0003)
         if self.dev is None:
@@ -34,6 +34,19 @@ class paddlemodel:
         self.ENC_DIAG_AND_AUTO_GAIN_CTRL = 0x3FFD
         self.ENC_MAGNITUDE = 0x3FFE
         self.ENC_ANGLE_AFTER_ZERO_POS_ADDER = 0x3FFF
+
+        self.last_prog_time = 0;
+        self.prog_time = 0;
+        self.total_prog_time = 0L;
+
+    def update_prog_time(self):
+        self.last_prog_time = self.prog_time    # Transfer last one
+        self.prog_time = self.dev.get_micros()  # Read new OWNER
+        if self.prog_time > self.last_prog_time:
+            self.total_prog_time += self.prog_time - self.last_prog_time
+        else:
+            self.total_prog_time += self.prog_time + 65535 - self.last_prog_time
+        return self.total_prog_time
 
     def close(self):
         self.dev = None
@@ -165,9 +178,9 @@ class paddlemodel:
         else:
             return (int(ret[0]) + 256 * int(ret[1])) & 0x3FFF
 
-    def get_millis(self):
+    def get_micros(self):
         try:
-            ret = self.dev.ctrl_transfer(0xC0, self.GET_MILLIS, 0, 0, 2)
+            ret = self.dev.ctrl_transfer(0xC0, self.GET_MICROS, 0, 0, 2)
         except usb.core.USBError:
             print "Could not send GET_DUTY_VAL vendor request."
         else:

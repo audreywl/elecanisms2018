@@ -26,6 +26,9 @@
 
 import Tkinter as tk
 import paddletest
+import time
+import csv
+import threading
 
 class paddletestgui:
 
@@ -58,8 +61,8 @@ class paddletestgui:
             self.a0_status.pack(side = tk.TOP)
             self.duty_status = tk.Label(self.root, text = 'Duty cycle is currently ??%')
             self.duty_status.pack(side = tk.TOP)
-            self.millis_status = tk.Label(self.root, text = 'Program Time: ?????')
-            self.millis_status.pack(side = tk.TOP)
+            self.micros_status = tk.Label(self.root, text = 'Program Time: ?????')
+            self.micros_status.pack(side = tk.TOP)
             self.encoder_status = tk.Label(self.root, text = 'Encoder Angle: ?????')
             self.encoder_status.pack(side = tk.TOP)
             self.update_status()
@@ -73,7 +76,7 @@ class paddletestgui:
         self.sw3_status.configure(text = 'SW3 is currently {!s}'.format(self.dev.read_sw3()))
         self.a0_status.configure(text = 'A0 is currently {:04d}'.format(self.dev.read_a0()))
         self.duty_status.configure(text = 'Duty cycle is currently {0:.0f}%'.format(self.dev.get_duty()))
-        self.millis_status.configure(text = 'Program Time: {:08d}'.format(self.update_prog_time()))
+        self.micros_status.configure(text = 'Program Time: {:08d}'.format(self.dev.update_prog_time()))
         self.encoder_status.configure(text = 'Encoder Angle: {0:.0f}'.format(self.dev.get_angle()))
         self.update_job = self.root.after(50, self.update_status)
 
@@ -82,15 +85,25 @@ class paddletestgui:
         self.root.destroy()
         self.dev.close()
 
-    def update_prog_time(self):
-        self.last_prog_time = self.prog_time    # Transfer last one
-        self.prog_time = self.dev.get_millis()  # Read new OWNER
-        if self.prog_time > self.last_prog_time:
-            self.total_prog_time += self.prog_time - self.last_prog_time
-        else:
-            self.total_prog_time += self.prog_time + 65535 - self.last_prog_time
-        return self.total_prog_time
+def run_test():
+    with open('spindown_log.csv', 'wb') as csvfile:
+        writer = csv.writer(csvfile)
+        dev = paddletest.paddlemodel()
+
+        t = threading.Thread(target=log_data, args=(dev,writer,)) # Set up daemon thread to log data
+        t.setDaemon(True)
+        t.start()                                                 # Start logging data
+
+        dev.set_duty(float(100))                                  # Set power to max
+        time.sleep(3)                                             # Wait for spin up
+        # dev.set_duty(float(0))                                    # Set power to 0
+        # time.sleep(10)                                            # Wait for spin down
+
+def log_data(dev, writer): # Daemon function that will log data as often as possible
+    while True:
+        writer.writerow([dev.get_micros(), dev.get_angle()])
 
 if __name__=='__main__':
-    gui = paddletestgui()
-    gui.root.mainloop()
+    run_test();
+    # gui = paddletestgui()
+    # gui.root.mainloop()
