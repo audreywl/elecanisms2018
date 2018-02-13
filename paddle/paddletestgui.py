@@ -86,7 +86,7 @@ class paddletestgui:
         self.dev.close()
 
 def run_test():
-    with open('spindown_log.csv', 'wb') as csvfile:
+    with open('spindown_log.csv', 'w') as csvfile:
         writer = csv.writer(csvfile)
         dev = paddletest.paddlemodel()
 
@@ -94,10 +94,14 @@ def run_test():
         t.setDaemon(True)
         t.start()                                                 # Start logging data
 
-        dev.set_duty(float(100))                                  # Set power to max
+        dev.set_duty(25)                                  # Set power to max
+        print "on"
         time.sleep(3)                                             # Wait for spin up
-        dev.set_duty(float(0))                                    # Set power to 0
+        print "waiting"
+        dev.set_duty(0)                                    # Set power to 0
+        print "off"
         time.sleep(10)                                            # Wait for spin down
+        print "spindown"
 
 def log_data(dev, writer): # Daemon function that will log data as often as possible
     while True:
