@@ -15,6 +15,7 @@ class paddlemodel:
         self.GET_DUTY_VAL = 8
         self.GET_DUTY_MAX = 9
         self.READ_ENCODER = 10
+        self.GET_MILLIS = 11
 
         self.dev = usb.core.find(idVendor = 0x6666, idProduct = 0x0003)
         if self.dev is None:
@@ -119,3 +120,11 @@ class paddlemodel:
             print "Could not send ENC_READ_REG vendor request."
         else:
             return ret
+
+    def get_millis(self):
+        try:
+            ret = self.dev.ctrl_transfer(0xC0, self.GET_MILLIS, 0, 0, 2)
+        except usb.core.USBError:
+            print "Could not send GET_DUTY_VAL vendor request."
+        else:
+            return int(ret[0]) + 256 * int(ret[1])

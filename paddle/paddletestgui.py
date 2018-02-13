@@ -25,12 +25,16 @@
 #
 
 import Tkinter as tk
-import usbtest
+import paddletest
 
 class paddletestgui:
 
     def __init__(self):
-        self.dev = paddlemodel.paddlemodel()
+        self.last_prog_time = 0;
+        self.prog_time = 0;
+        self.total_prog_time = 0L;
+        self.dev = paddletest.paddlemodel()
+
         if self.dev.dev >= 0:
             self.update_job = None
             self.root = tk.Tk()
@@ -54,8 +58,8 @@ class paddletestgui:
             self.a0_status.pack(side = tk.TOP)
             self.duty_status = tk.Label(self.root, text = 'Duty cycle is currently ??%')
             self.duty_status.pack(side = tk.TOP)
-            self.encoder_status = tk.Label(self.root, text 'Encoder Angle: ?????')
-            self.encoder_status.pack(side = tk.TOP)
+            self.millis_status = tk.Label(self.root, text = 'Program Time: ?????')
+            self.millis_status.pack(side = tk.TOP)
             self.update_status()
 
     def set_duty_callback(self, value):
@@ -67,13 +71,22 @@ class paddletestgui:
         self.sw3_status.configure(text = 'SW3 is currently {!s}'.format(self.dev.read_sw3()))
         self.a0_status.configure(text = 'A0 is currently {:04d}'.format(self.dev.read_a0()))
         self.duty_status.configure(text = 'Duty cycle is currently {0:.0f}%'.format(self.dev.get_duty()))
-        self.encoder_status.configure(text = 'Encoder Angle: {:06d}'.format(self.dev.read_encoder()))
+        self.millis_status.configure(text = 'Program Time: {:08d}'.format(self.update_prog_time()))
         self.update_job = self.root.after(50, self.update_status)
 
     def shut_down(self):
         self.root.after_cancel(self.update_job)
         self.root.destroy()
         self.dev.close()
+
+    def update_prog_time(self):
+        self.last_prog_time = self.prog_time    # Transfer last one
+        self.prog_time = self.dev.get_millis()  # Read new OWNER
+        if self.prog_time > self.last_prog_time:
+            self.total_prog_time += self.prog_time - self.last_prog_time
+        else:
+            self.total_prog_time += self.prog_time + 65535 - self.last_prog_time
+        return self.total_prog_time
 
 if __name__=='__main__':
     gui = paddletestgui()
