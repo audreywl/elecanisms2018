@@ -96,8 +96,8 @@ def run_test():
 
         dev.set_duty(float(100))                                  # Set power to max
         time.sleep(3)                                             # Wait for spin up
-        # dev.set_duty(float(0))                                    # Set power to 0
-        # time.sleep(10)                                            # Wait for spin down
+        dev.set_duty(float(0))                                    # Set power to 0
+        time.sleep(10)                                            # Wait for spin down
 
 def log_data(dev, writer): # Daemon function that will log data as often as possible
     while True:
