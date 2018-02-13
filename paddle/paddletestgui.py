@@ -94,7 +94,7 @@ def run_test():
         t.setDaemon(True)
         t.start()                                                 # Start logging data
 
-        dev.set_duty(25)                                  # Set power to max
+        dev.set_duty(100)                                  # Set power to max
         print "on"
         time.sleep(3)                                             # Wait for spin up
         print "waiting"
