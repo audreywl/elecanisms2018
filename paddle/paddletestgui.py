@@ -67,7 +67,7 @@ class paddletestgui:
         self.sw3_status.configure(text = 'SW3 is currently {!s}'.format(self.dev.read_sw3()))
         self.a0_status.configure(text = 'A0 is currently {:04d}'.format(self.dev.read_a0()))
         self.duty_status.configure(text = 'Duty cycle is currently {0:.0f}%'.format(self.dev.get_duty()))
-        self.encoder_status.configure(text = 'Hypothetical Encoder Angle: {0:.0f}'.format(self.dev.get_angle()))
+        self.encoder_status.configure(text = 'Encoder Angle: {0:.0f}'.format(self.dev.get_angle()))
         self.update_job = self.root.after(50, self.update_status)
 
     def shut_down(self):

@@ -162,5 +162,4 @@ class paddlemodel:
         except usb.core.USBError:
             print "Could not send ENC_READ_REG vendor request."
         else:
-            sensed = (int(ret[0]) + 256 * int(ret[1])) & 0x3FFF
-            return sensed/16400.0 *360.0
+            return (int(ret[0]) + 256 * int(ret[1])) & 0x3FFF
