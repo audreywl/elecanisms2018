@@ -107,6 +107,6 @@ def log_data(dev, writer): # Daemon function that will log data as often as poss
         writer.writerow([dev.update_prog_time(), dev.get_angle()])
 
 if __name__=='__main__':
-    run_test();
-    # gui = paddletestgui()
-    # gui.root.mainloop()
+    # run_test();
+    gui = paddletestgui()
+    gui.root.mainloop()

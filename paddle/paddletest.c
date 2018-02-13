@@ -40,6 +40,10 @@ void __attribute__((interrupt, auto_psv)) _T2Interrupt(void) {
     micros.w += 1;
     LED1 = !LED1;
 }
+void __attribute__((interrupt, auto_psv)) _T3Interrupt(void) {
+    IFS0bits.T3IF = 0;      // lower Timer3 interrupt flag
+    LED2 = !LED2;
+}
 
 WORD get_micros(void) {
     return micros;
@@ -222,6 +226,15 @@ int16_t main(void) {
   IEC0bits.T2IE = 1;      // enable T2 interrupt
   T2CONbits.TON = 1;      // Start T2
 
+  // Timer 3 Setup
+  T3CON = 0x0000;         // prescale 1:1, timer off, use system clock
+  PR3 = (uint16_t)(FCY / 4e3 - 1.);           // configure timer period register to same as OC1 and 2 periods
+
+
+  IFS0bits.T3IF = 0;      // lower T3 interrupt flag
+  IEC0bits.T3IE = 1;      // enable T3 interrupt
+  T3CONbits.TON = 1;      // Start T3
+
   RPOR = (uint8_t *)&RPOR0;
   RPINR = (uint8_t *)&RPINR0;
 
@@ -230,7 +243,7 @@ int16_t main(void) {
   RPOR[ENC_MOSI_RP] = MOSI2_RP;
   RPOR[ENC_SCK_RP] = SCK2OUT_RP;
   RPOR[D8_RP] = OC1_RP;  // connect the OC1 module output to pin D8
-  RPOR[D7_RP] = OC2_RP;  // connect the OC1 module output to pin D8
+  RPOR[D7_RP] = OC2_RP;  // connect the OC1 module output to pin D7
 
   __builtin_write_OSCCONL(OSCCON | 0x40);
 
@@ -243,24 +256,25 @@ int16_t main(void) {
                       //   clock (i.e., FCY, OCTSEL<2:0> = 0b111) and
                       //   and to operate in edge-aligned PWM mode
                       //   (OCM<2:0> = 0b110)
-  OC1CON2 = 0x001F;   // configure OC1 module to syncrhonize to itself
+  OC1CON2 = 0x001F;   // configure OC2 module to synchronize to itself
                       //   (i.e., OCTRIG = 0 and SYNCSEL<4:0> = 0b11111)
-  OC2CON1 = 0x1C06;   // configure OC2 module to use the peripheral
+  OC2CON1 = 0x1C06;   // configure OC1 module to use the peripheral
                       //   clock (i.e., FCY, OCTSEL<2:0> = 0b111) and
                       //   and to operate in edge-aligned PWM mode
                       //   (OCM<2:0> = 0b110)
-  OC2CON2 = 0x001F;   // configure OC2 module to syncrhonize to itself
+  OC2CON2 = 0x001F;   // configure OC2 module to synchronize to itself
                       //   (i.e., OCTRIG = 0 and SYNCSEL<4:0> = 0b11111)
 
-  OC1RS = (uint16_t)(FCY / 2e3 - 1.);     // configure period register to
-                                          //   get a frequency of 2kHz
-  OC2RS = (uint16_t)(FCY / 2e3 - 1.);     // configure period register to
-                                          //   get a frequency of 2kHz
-  OC1R = 0;  // configure duty cycle to 25% (i.e., period / 4)
+  OC1RS = (uint16_t)(FCY / 4e3 - 1.);     // configure period register to
+                                          //   get a frequency of 4kHz
+  OC2RS = (uint16_t)(FCY / 4e3 - 1.);     // configure period register to
+                                          //   get a frequency of 4kHz
+  OC1R = OC1RS >>2;  // configure duty cycle to initialize at 25%
   OC2R = 0;
 
   OC1TMR = 0;         // set OC1 timer count to 0
-  OC2TMR = 0;         // set OC1 timer count to 0
+  OC2TMR = 0;         // set OC2 timer count to 0
+  TMR3 = 40;          // set Timer3 to be offset with OC1 and 2 timers
 
   USB_setup_vendor_callback = vendor_requests;
   init_usb();

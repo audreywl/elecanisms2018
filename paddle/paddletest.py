@@ -156,10 +156,11 @@ class paddlemodel:
 
     def get_duty(self):
         forward_duty = 100. * self.get_duty_val_forward() / self.get_duty_max_forward()
+        reverse_duty = -100. * self.get_duty_val_reverse() / self.get_duty_max_reverse()
         if forward_duty > 0:
             return forward_duty
-        elif type(self.get_duty_val_reverse) is int:
-            return -100. * self.get_duty_val_reverse() / self.get_duty_max_reverse()
+        elif reverse_duty < 0:
+            return reverse_duty
         else:
             return 0.
 
