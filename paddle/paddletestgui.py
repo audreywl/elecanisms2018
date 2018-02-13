@@ -90,9 +90,9 @@ def run_test():
         writer = csv.writer(csvfile)
         dev = paddletest.paddlemodel()
 
-        # t = threading.Thread(target=log_data, args=(dev,writer,)) # Set up daemon thread to log data
-        # t.setDaemon(True)
-        # t.start()                                                 # Start logging data
+        t = threading.Thread(target=log_data, args=(dev,writer,)) # Set up daemon thread to log data
+        t.setDaemon(True)
+        t.start()                                                 # Start logging data
 
         dev.set_duty(25)                                  # Set power to max
         print "on"
