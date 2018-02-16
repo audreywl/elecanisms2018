@@ -17,22 +17,24 @@
 #define ENC_MOSI_RP         D0_RP
 #define ENC_SCK_RP          D2_RP
 
-#define TOGGLE_LED1         0
-#define TOGGLE_LED2         1
-#define TOGGLE_LED3         2
-#define READ_SW1            3
-#define READ_SW2            4
-#define READ_SW3            5
-#define READ_A0             6
-#define SET_DUTY_VAL_FORWARD        7
-#define GET_DUTY_VAL_FORWARD        8
-#define GET_DUTY_MAX_FORWARD       9
-#define SET_DUTY_VAL_REVERSE        10
-#define GET_DUTY_VAL_REVERSE        11
-#define GET_DUTY_MAX_REVERSE        12
-#define ENC_READ_REG       13
-#define GET_MICROS         14
+#define TOGGLE_LED1               0
+#define TOGGLE_LED2               1
+#define TOGGLE_LED3               2
+#define READ_SW1                  3
+#define READ_SW2                  4
+#define READ_SW3                  5
+#define READ_A0                   6
+#define SET_DUTY_VAL_FORWARD      7
+#define GET_DUTY_VAL_FORWARD      8
+#define GET_DUTY_MAX_FORWARD      9
+#define SET_DUTY_VAL_REVERSE      10
+#define GET_DUTY_VAL_REVERSE      11
+#define GET_DUTY_MAX_REVERSE      12
+#define ENC_READ_REG              13
+#define GET_MICROS                14
 
+
+/* Setup micros variable to count us from program start */
 WORD micros;
 
 void __attribute__((interrupt, auto_psv)) _T2Interrupt(void) {
@@ -44,6 +46,11 @@ void __attribute__((interrupt, auto_psv)) _T2Interrupt(void) {
 WORD get_micros(void) {
     return micros;
 }
+
+const uint16_t PWM_PERIOD = (uint16_t)(FCY / 2e3 - 1.);     // configure period registers to
+
+uint16_t measured_i_low = 0;
+uint16_t measured_i_high = 0;                                                          //   get a frequency of 2kHz
 
 uint16_t even_parity(uint16_t v) {
     v ^= v >> 8;
@@ -194,26 +201,39 @@ void vendor_requests(void) {
 }
 
 
+/* Read on ADC channel 1 and wait until conversion end */
+void readADC(uint16_t* res) {
+  AD1CON1bits.SAMP = 1; // Start sampling
+
+  while !(AD1CON1bits.DONE) {
+    __asm__("nop");
+  }
+  // move ADC value (masked) to register
+  *res = ADC1BUF0 &= 0xF600;
+
+}
+
+/* MAIN FUNCTION HERE *********************************************************/
 
 int16_t main(void) {
   uint8_t *RPOR, *RPINR;
 
   init_elecanisms();
 
-  // Configure pin D8 to produce a 1-kHz PWM signal with a 25% duty cycle
-  // using the OC1 module.
+/* Configure pin D8 to produce a 1-kHz PWM signal with a 25% duty cycle
+   using the OC1 module. */
   D8_DIR = OUT;      // configure D8 to be a digital output
   D8 = 0;            // set D8 low
   D7_DIR = OUT;      // configure D7 to be a digital output
   D7 = 0;            // set D7 low
 
-  // Configure encoder pins and connect them to SPI2
+/* Configure encoder pins and connect them to SPI2 */
   ENC_CSn_DIR = OUT; ENC_CSn = 1;
   ENC_SCK_DIR = OUT; ENC_SCK = 0;
   ENC_MOSI_DIR = OUT; ENC_MOSI = 0;
   ENC_MISO_DIR = IN;
 
-  // Timer 2 Setup for timestamp
+/* Timer 2 Setup for 1us timestamp */
   T2CON = 0x0000;         // set Timer2 prescaler to 1
   PR2 = 0x100;            // Period reg 16, resultant period is Tcy * 16, 1us
 
@@ -222,16 +242,14 @@ int16_t main(void) {
   IEC0bits.T2IE = 1;      // enable T2 interrupt
   T2CONbits.TON = 1;      // Start T2
 
-  // ADC setup for higher-speed conversion for current measurement
+/* ADC setup for higher-speed conversion for current measurement */
   AD1CON1bits.SSRC = 3;   // Set conversion trigger to internal timer
   AD1CON2 = 0;            // Don't use an ADC reading buffer, leave volt ref as Vcc -> Vdd
   AD1CON3bits.ADRC = 0;   // Use device clock, not separate RC osc.
   AD1CON3bits.SAMC = 4;   // Set sampling time to 4 TAD a/d converter periods
   AD1CON3bits.ADCS = 1;   // Set TAD to 1 TCY
 
-
-
-
+/* Configure SPI */
   RPOR = (uint8_t *)&RPOR0;
   RPINR = (uint8_t *)&RPINR0;
 
@@ -248,29 +266,36 @@ int16_t main(void) {
   SPI2CON2 = 0;
   SPI2STAT = 0x8000;
 
+/* Configure OC1 for PWM */
+  OC1CON1bits.OCTSEL = 0x111;   // configure OC1 module to use the peripheral
+                                //   clock (i.e., FCY, OCTSEL<2:0> = 0b111) and
+  OC1CON1bits.OCM = 0x110;      //   and to operate in edge-aligned PWM mode
+                                //   (OCM<2:0> = 0b110)
+  OC1CON2bits.OCTRIG = 0;       // configure OC1 module to syncrhonize to itself
+  OC1CON2bits.SYNCSEL = 0x1F;   //   (i.e., OCTRIG = 0 and SYNCSEL<4:0> = 0b11111)
 
-  OC1CON1 = 0x1C06;   // configure OC1 module to use the peripheral
-                      //   clock (i.e., FCY, OCTSEL<2:0> = 0b111) and
-                      //   and to operate in edge-aligned PWM mode
-                      //   (OCM<2:0> = 0b110)
-  OC1CON2 = 0x001F;   // configure OC1 module to syncrhonize to itself
-                      //   (i.e., OCTRIG = 0 and SYNCSEL<4:0> = 0b11111)
-  OC2CON1 = 0x1C06;   // configure OC2 module to use the peripheral
-                      //   clock (i.e., FCY, OCTSEL<2:0> = 0b111) and
-                      //   and to operate in edge-aligned PWM mode
-                      //   (OCM<2:0> = 0b110)
-  OC2CON2 = 0x001F;   // configure OC2 module to syncrhonize to itself
-                      //   (i.e., OCTRIG = 0 and SYNCSEL<4:0> = 0b11111)
+  OC1RS = PWM_PERIOD;           // configure period register to
+                                //   get a frequency of 2kHz
+  OC1TMR = 0;                   // set OC1 timer count to 0
+  OC1R = 0;                     // set default duty cycle to 0
 
-  OC1RS = (uint16_t)(FCY / 2e3 - 1.);     // configure period register to
-                                          //   get a frequency of 2kHz
-  OC2RS = (uint16_t)(FCY / 2e3 - 1.);     // configure period register to
-                                          //   get a frequency of 2kHz
-  OC1R = 0;  // configure duty cycle to 25% (i.e., period / 4)
+/* Configure OC2 for reverse direction PWM, synch to OC1 */
+  OC2CON1bits.OCTSEL = 0x111;   // configure OC2 module to use the peripheral
+                                //   clock (i.e., FCY, OCTSEL<2:0> = 0b111) and
+  OC2CON1bits.OCM = 0x110;      //   and to operate in edge-aligned PWM mode
+                                //   (OCM<2:0> = 0b110)
+  OC2CON2bits.OCTRIG = 0;       // configure OC2 module to syncrhonize to OC1
+  OC2CON2bits.SYNCSEL = 0x1;    //   (i.e., OCTRIG = 0 and SYNCSEL<4:0> = 0b11111)
+
+  OC2RS = PWM_PERIOD;           // configure period register to
+                                //   get a frequency of 2kHz
+  OC2TMR = 0;                   // set OC2 timer count to 0
+  OC2R = 0;                     // set default duty cycle to 0
+
+/* Set OC1 and OC2 duty cycles */
+  OC1R = 0; // configure duty cycle (set off point)
   OC2R = 0;
 
-  OC1TMR = 0;         // set OC1 timer count to 0
-  OC2TMR = 0;         // set OC1 timer count to 0
 
   USB_setup_vendor_callback = vendor_requests;
   init_usb();
