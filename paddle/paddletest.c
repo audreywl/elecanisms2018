@@ -51,10 +51,28 @@ WORD get_micros(void) {
     return micros;
 }
 
+/* Current Measurement ISRs */
+uint16_t measured_i_low = 0;
+uint16_t measured_i_high = 0;
+uint16_t current = 0;
+
+// OC2 ISR for first ADC measurement
+void __attribute__((interrupt, auto_psv)) _OC2Interrupt(void) {
+  IFS0bits.OC2IF = 0;
+  readADC(&measured_i_high);
+  current = (measured_i_high >> 2) + (measured_i_low >> 2);
+}
+
+// OC3 ISR for second ADC measurement
+void __attribute__((interrupt, auto_psv)) _OC3Interrupt(void) {
+  IFS1bits.OC3IF = 0;
+  readADC(&measured_i_low);
+  current = (measured_i_high >> 2) + (measured_i_low >> 2);
+}
+
 const uint16_t PWM_PERIOD = (uint16_t)(FCY / 2e3 - 1.);     // configure period registers to
 
-uint16_t measured_i_low = 0;
-uint16_t measured_i_high = 0;                                                          //   get a frequency of 2kHz
+                                                        //   get a frequency of 2kHz
 
 uint16_t even_parity(uint16_t v) {
     v ^= v >> 8;
@@ -253,6 +271,9 @@ int16_t main(void) {
   AD1CON3bits.SAMC = 4;   // Set sampling time to 4 TAD a/d converter periods
   AD1CON3bits.ADCS = 1;   // Set TAD to 1 TCY
 
+  // conversion time is 12 TAD after 4 TAD sampling
+  uint16_t ADC_PERIOD = (AD1CON3bits.SAMC + 12 + 4) * AD1CON3bits.ADCS;
+
 /* Configure SPI */
   RPOR = (uint8_t *)&RPOR0;
   RPINR = (uint8_t *)&RPINR0;
@@ -295,11 +316,26 @@ int16_t main(void) {
                                 //   get a frequency of 2kHz
   OC2TMR = 0;                   // set OC2 timer count to 0
   OC2R = 0;                     // set default duty cycle to 0
+  IEC0bits.OC2IE = 1;           // Enable OC2 interrupts
+
+/* Configure OC3 for ADC reading at end of duty cycle */
+  OC3CON1bits.OCTSEL = 0x111;   // configure OC3 module to use the peripheral
+                                //   clock (i.e., FCY, OCTSEL<2:0> = 0b111) and
+  OC3CON1bits.OCM = 0x110;      //   and to operate in edge-aligned PWM mode
+                                //   (OCM<2:0> = 0b110)
+  OC3CON2bits.OCTRIG = 0;       // configure OC3 module to syncrhonize to itself
+  OC3CON2bits.SYNCSEL = 0x1;    //   (i.e., OCTRIG = 0 and SYNCSEL<4:0> = 0b11111)
+
+  OC3RS = PWM_PERIOD;           // configure period register to
+                                //   get a frequency of 2kHz
+  OC3TMR = 0;                   // set OC3 timer count to 0
+  OC3R = PWM_PERIOD - ADC_PERIOD;  // set match value to PWM_PERIOD - ADC_PERIOD
+  IEC1bits.OC3IE = 1;           // Enable OC3 interrupts
 
 /* Set OC1 and OC2 duty cycles */
   OC1R = 0; // configure duty cycle (set off point)
   OC2R = 0;
-
+  OC3R = 0;
 
   USB_setup_vendor_callback = vendor_requests;
   init_usb();
