@@ -106,7 +106,50 @@ def log_data(dev, writer): # Daemon function that will log data as often as poss
     while True:
         writer.writerow([dev.update_prog_time(), dev.get_angle()])
 
+class PIDControl:
+    def __init__(self):
+        self.dev = paddletest.paddlemodel()
+        #self.dState = 0
+        #self.iState = 0
+        #self.iMax = 8000
+        #self.iMin = -8000
+        self.pGain = .004
+        #self.iGain = .05
+        #self.dGain = 100
+        self.position = self.dev.get_angle()
+    def get_error(self):
+        position = self.dev.get_angle()
+        error = self.position - position
+        if error > 10000:
+            error = self.position - (position+16384)
+        elif error < -10000:
+            error = (self.position + 16384) - position
+        return (position, error)
+    def update_pid(self):
+        position, error = self.get_error()
+        pTerm = self.pGain * error
+        # iState += error
+        # if iState > self.iMax:
+        #     iState = self.iMax
+        # elif iState < self.iMin:
+        #     iState = self.iMin
+        # iTerm = self.iGain * iState
+        # dTerm = self.dGain * (self.dState - position)
+        # self.dState = dState
+        # self.iState = iState
+        #drive = pTerm + iTerm + dTerm
+        drive = pTerm
+        #duty = (drive/45.5)/1000.0 #convert to degrees, then divide by top speed of 100000 deg/.1 sec and multiply by 100 for duty cycle
+        self.dev.set_duty(drive)
+        print drive
+        time.sleep(.1)
+
+
+
 if __name__=='__main__':
     # run_test();
-    gui = paddletestgui()
-    gui.root.mainloop()
+    # gui = paddletestgui()
+    # gui.root.mainloop()
+    control = PIDControl()
+    while True:
+        control.update_pid()
