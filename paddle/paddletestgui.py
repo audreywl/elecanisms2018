@@ -113,12 +113,17 @@ class PIDControl:
         #self.iState = 0
         #self.iMax = 8000
         #self.iMin = -8000
-        self.pGain = .004
+        self.pGain = -.004
         #self.iGain = .05
         #self.dGain = 100
         self.position = self.dev.get_angle()
     def get_error(self):
-        position = self.dev.get_angle()
+        positions = []
+        for i in range(0,10):
+            position = self.dev.get_angle()
+            positions.append(position)
+            time.sleep(.001)
+        position = sum(positions)/10
         error = self.position - position
         if error > 10000:
             error = self.position - (position+16384)
@@ -141,8 +146,7 @@ class PIDControl:
         drive = pTerm
         #duty = (drive/45.5)/1000.0 #convert to degrees, then divide by top speed of 100000 deg/.1 sec and multiply by 100 for duty cycle
         self.dev.set_duty(drive)
-        print drive
-        time.sleep(.1)
+        time.sleep(.01)
 
 
 
