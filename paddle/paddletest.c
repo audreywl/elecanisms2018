@@ -32,7 +32,7 @@
 #define GET_DUTY_MAX_REVERSE      12
 #define ENC_READ_REG              13
 #define GET_MICROS                14
-
+#define GET_CURRENT               15
 
 /* Setup micros variable to count us from program start */
 WORD micros;
@@ -51,24 +51,10 @@ WORD get_micros(void) {
     return micros;
 }
 
-/* Current Measurement ISRs */
+/* Current Measurement Variables */
 uint16_t measured_i_low = 0;
 uint16_t measured_i_high = 0;
 uint16_t current = 0;
-
-// OC2 ISR for first ADC measurement
-void __attribute__((interrupt, auto_psv)) _OC2Interrupt(void) {
-  IFS0bits.OC2IF = 0;
-  readADC(&measured_i_high);
-  current = (measured_i_high >> 2) + (measured_i_low >> 2);
-}
-
-// OC3 ISR for second ADC measurement
-void __attribute__((interrupt, auto_psv)) _OC3Interrupt(void) {
-  IFS1bits.OC3IF = 0;
-  readADC(&measured_i_low);
-  current = (measured_i_high >> 2) + (measured_i_low >> 2);
-}
 
 const uint16_t PWM_PERIOD = (uint16_t)(FCY / 2e3 - 1.);     // configure period registers to
 
@@ -217,6 +203,13 @@ void vendor_requests(void) {
             BD[EP0IN].bytecount = 2;
             BD[EP0IN].status = UOWN | DTS | DTSEN;
             break;
+        case GET_CURRENT:
+            temp.w = current;
+            BD[EP0IN].address[0] = temp.b[0];
+            BD[EP0IN].address[1] = temp.b[1];
+            BD[EP0IN].bytecount = 2;
+            BD[EP0IN].status = UOWN | DTS | DTSEN;
+            break;
         default:
             USB_error_flags |= REQUEST_ERROR;
     }
@@ -227,13 +220,28 @@ void vendor_requests(void) {
 void readADC(uint16_t* res) {
   AD1CON1bits.SAMP = 1; // Start sampling
 
-  while !(AD1CON1bits.DONE) {
+  while (AD1CON1bits.DONE != 1) {
     __asm__("nop");
   }
   // move ADC value (masked) to register
   *res = ADC1BUF0 &= 0xF600;
 
 }
+
+// OC2 ISR for first ADC measurement
+void __attribute__((interrupt, auto_psv)) _OC2Interrupt(void) {
+  IFS0bits.OC2IF = 0;
+  readADC(&measured_i_high);
+  current = (measured_i_high >> 2) + (measured_i_low >> 2);
+}
+
+// OC3 ISR for second ADC measurement
+void __attribute__((interrupt, auto_psv)) _OC3Interrupt(void) {
+  IFS1bits.OC3IF = 0;
+  readADC(&measured_i_low);
+  current = (measured_i_high >> 2) + (measured_i_low >> 2);
+}
+
 
 /* MAIN FUNCTION HERE *********************************************************/
 
