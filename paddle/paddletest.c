@@ -42,6 +42,10 @@ void __attribute__((interrupt, auto_psv)) _T2Interrupt(void) {
     micros.w += 1;
     LED1 = !LED1;
 }
+void __attribute__((interrupt, auto_psv)) _T3Interrupt(void) {
+    IFS0bits.T3IF = 0;      // lower Timer3 interrupt flag
+    LED2 = !LED2;
+}
 
 WORD get_micros(void) {
     return micros;
@@ -287,7 +291,7 @@ int16_t main(void) {
   RPOR[ENC_MOSI_RP] = MOSI2_RP;
   RPOR[ENC_SCK_RP] = SCK2OUT_RP;
   RPOR[D8_RP] = OC1_RP;  // connect the OC1 module output to pin D8
-  RPOR[D7_RP] = OC2_RP;  // connect the OC1 module output to pin D8
+  RPOR[D7_RP] = OC2_RP;  // connect the OC1 module output to pin D7
 
   __builtin_write_OSCCONL(OSCCON | 0x40);
 
