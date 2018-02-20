@@ -146,6 +146,7 @@ class PIDControl:
         drive = pTerm
         #duty = (drive/45.5)/1000.0 #convert to degrees, then divide by top speed of 100000 deg/.1 sec and multiply by 100 for duty cycle
         self.dev.set_duty(drive)
+        print position, drive
         time.sleep(.01)
 
 
