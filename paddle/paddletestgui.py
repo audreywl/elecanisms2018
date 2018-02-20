@@ -65,6 +65,8 @@ class paddletestgui:
             self.micros_status.pack(side = tk.TOP)
             self.encoder_status = tk.Label(self.root, text = 'Encoder Angle: ?????')
             self.encoder_status.pack(side = tk.TOP)
+            self.encoder_status = tk.Label(self.root, text = 'Current: ?????')
+            self.encoder_status.pack(side = tk.TOP)
             self.update_status()
 
     def set_duty_callback(self, value):
@@ -74,10 +76,10 @@ class paddletestgui:
         self.sw1_status.configure(text = 'SW1 is currently {!s}'.format(self.dev.read_sw1()))
         self.sw2_status.configure(text = 'SW2 is currently {!s}'.format(self.dev.read_sw2()))
         self.sw3_status.configure(text = 'SW3 is currently {!s}'.format(self.dev.read_sw3()))
-        self.a0_status.configure(text = 'A0 is currently {:04d}'.format(self.dev.read_a0()))
         self.duty_status.configure(text = 'Duty cycle is currently {0:.0f}%'.format(self.dev.get_duty()))
         self.micros_status.configure(text = 'Program Time: {:08d}'.format(self.dev.update_prog_time()))
         self.encoder_status.configure(text = 'Encoder Angle: {0:.0f}'.format(self.dev.get_angle()))
+        self.encoder_status.configure(text = 'Current: {0:.0f}'.format(self.dev.get_current()))
         self.update_job = self.root.after(50, self.update_status)
 
     def shut_down(self):
