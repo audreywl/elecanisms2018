@@ -19,6 +19,7 @@ class paddlemodel:
         self.GET_DUTY_MAX_REVERSE = 12
         self.ENC_READ_REG = 13
         self.GET_MICROS = 14
+        self.GET_CURRENT = 15
 
         self.dev = usb.core.find(idVendor = 0x6666, idProduct = 0x0003)
         if self.dev is None:
@@ -183,6 +184,14 @@ class paddlemodel:
         try:
             ret = self.dev.ctrl_transfer(0xC0, self.GET_MICROS, 0, 0, 2)
         except usb.core.USBError:
-            print "Could not send GET_DUTY_VAL vendor request."
+            print "Could not send GET_MICROS vendor request."
+        else:
+            return int(ret[0]) + 256 * int(ret[1])
+
+    def get_current(self):
+        try:
+            ret = self.dev.ctrl_transfer(0xC0, self.GET_CURRENT, 0, 0, 2)
+        except usb.core.USBError:
+            print "Could not send GET_CURRENT vendor request."
         else:
             return int(ret[0]) + 256 * int(ret[1])
