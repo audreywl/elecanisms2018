@@ -60,6 +60,10 @@ const uint16_t PWM_PERIOD = (uint16_t)(FCY / 2e3 - 1.);     // configure period 
 
                                                         //   get a frequency of 2kHz
 
+uint16_t get_current(void) {
+    return current;
+}
+
 uint16_t even_parity(uint16_t v) {
     v ^= v >> 8;
     v ^= v >> 4;
@@ -204,7 +208,7 @@ void vendor_requests(void) {
             BD[EP0IN].status = UOWN | DTS | DTSEN;
             break;
         case GET_CURRENT:
-            temp.w = current;
+            temp.w = get_current();
             BD[EP0IN].address[0] = temp.b[0];
             BD[EP0IN].address[1] = temp.b[1];
             BD[EP0IN].bytecount = 2;

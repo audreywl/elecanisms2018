@@ -154,13 +154,13 @@ class PIDControl:
 
 if __name__=='__main__':
     # run_test();
-    # gui = paddletestgui()
-    # gui.root.mainloop()
-    control = PIDControl()
-    while True:
-        new_position = control.position + 100
-        if new_position < 16385:
-            control.position = new_position
-        else:
-            control.position = new_position-16384
-        control.update_pid()
+    gui = paddletestgui()
+    gui.root.mainloop()
+    # control = PIDControl()
+    # while True:
+    #     new_position = control.position + 100
+    #     if new_position < 16385:
+    #         control.position = new_position
+    #     else:
+    #         control.position = new_position-16384
+    #     control.update_pid()

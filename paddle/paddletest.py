@@ -189,10 +189,18 @@ class paddlemodel:
         else:
             return int(ret[0]) + 256 * int(ret[1])
 
-    def get_current(self):
+    def get_current_val(self):
         try:
             ret = self.dev.ctrl_transfer(0xC0, self.GET_CURRENT, 0, 0, 2)
         except usb.core.USBError:
             print "Could not send GET_CURRENT vendor request."
         else:
             return int(ret[0]) + 256 * int(ret[1])
+
+    def get_current(self):
+        v = self.get_current_val()
+        print v
+        if type(v) is int:
+            return v
+        else: return -1
+        # return 1;
