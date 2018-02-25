@@ -48,7 +48,7 @@ class paddletestgui:
             tk.Button(fm, text = 'LED2', command = self.dev.toggle_led2).pack(side = tk.LEFT)
             tk.Button(fm, text = 'LED3', command = self.dev.toggle_led3).pack(side = tk.LEFT)
             fm.pack(side = tk.TOP)
-            dutyslider = tk.Scale(self.root, from_ = -25, to = 25, orient = tk.HORIZONTAL, showvalue = tk.FALSE, command = self.set_duty_callback)
+            dutyslider = tk.Scale(self.root, from_ = -50, to = 50, orient = tk.HORIZONTAL, showvalue = tk.FALSE, command = self.set_duty_callback)
             dutyslider.set(0)
             dutyslider.pack(side = tk.TOP)
             self.sw1_status = tk.Label(self.root, text = 'SW1 is currently ?')
@@ -117,11 +117,11 @@ class PIDControl:
     def __init__(self):
         self.dev = paddletest.paddlemodel()
         #self.dState = 0
-        #self.iState = 0
-        #self.iMax = 8000
-        #self.iMin = -8000
+        self.iState = 0
+        self.iMax = 90
+        self.iMin = -90
         self.pGain = -.004
-        #self.iGain = .05
+        self.iGain = -.001
         #self.dGain = 100
         self.position = self.dev.get_angle()
     def get_error(self):
@@ -140,19 +140,21 @@ class PIDControl:
     def update_pid(self):
         position, error = self.get_error()
         pTerm = self.pGain * error
-        # iState += error
-        # if iState > self.iMax:
-        #     iState = self.iMax
-        # elif iState < self.iMin:
-        #     iState = self.iMin
-        # iTerm = self.iGain * iState
+        iState = self.iState
+        iState += error
+        if iState > self.iMax:
+            iState = self.iMax
+        elif iState < self.iMin:
+            iState = self.iMin
+        iTerm = self.iGain * iState
         # dTerm = self.dGain * (self.dState - position)
         # self.dState = dState
-        # self.iState = iState
+        self.iState = iState
         #drive = pTerm + iTerm + dTerm
-        drive = pTerm
+        drive = pTerm + iTerm
         #duty = (drive/45.5)/1000.0 #convert to degrees, then divide by top speed of 100000 deg/.1 sec and multiply by 100 for duty cycle
         self.dev.set_duty(drive)
+        print position, error, drive
         time.sleep(.01)
 
 
@@ -162,10 +164,9 @@ if __name__=='__main__':
     gui = paddletestgui()
     gui.root.mainloop()
     # control = PIDControl()
+    # new_position = control.position + 9000
+    # if new_position > 16384:
+    #     new_position = new_position-16384
+    # control.position = new_position
     # while True:
-    #     new_position = control.position + 100
-    #     if new_position < 16385:
-    #         control.position = new_position
-    #     else:
-    #         control.position = new_position-16384
     #     control.update_pid()
