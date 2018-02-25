@@ -37,21 +37,25 @@ class paddlemodel:
         self.ENC_MAGNITUDE = 0x3FFE
         self.ENC_ANGLE_AFTER_ZERO_POS_ADDER = 0x3FFF
 
-        self.last_prog_time = 0;
-        self.prog_time = 0;
-        self.total_prog_time = 0L;
-
-        self.angle = 0;
+        self.last_prog_time = 0
+        self.prog_time = 0
+        self.total_prog_time = 0L
+        self.angle = 0
+        self.delta_t = 0
+        self.delta_a = 0
+        self.speed = 0.0
+        self.raw_position = 2**13
 
     def update_prog_time(self, raw_prog_time):
         self.last_prog_time = self.prog_time    # Transfer last one
         self.prog_time = raw_prog_time  # Take in new
         if (self.prog_time == None): return 0
         if self.prog_time > self.last_prog_time:
-            self.total_prog_time += self.prog_time - self.last_prog_time
+            delta_t = self.prog_time - self.last_prog_time
         else:
-            self.total_prog_time += self.prog_time + 65535 - self.last_prog_time
-        return self.total_prog_time
+            delta_t = self.prog_time + 65535 - self.last_prog_time
+        self.total_prog_time += delta_t
+        return delta_t
 
     def close(self):
         self.dev = None
@@ -214,23 +218,41 @@ class paddlemodel:
     def get_time(self):
         return self.total_prog_time
 
-    def get_angle_and_time(self):
-        try:
-            ret = self.dev.ctrl_transfer(0xC0, self.GET_ANGLE_AND_TIME, 0, 0, 4)
-        except usb.core.USBError:
-            print "Could not send GET_ANGLE_AND_TIME vendor request."
-        else:
-            return (int(ret[0]) + 256 * int(ret[1]), int(ret[2]) + 256 * int(ret[3]))
+    # def get_angle_and_time(self):
+    #     try:
+    #         ret = self.dev.ctrl_transfer(0xC0, self.GET_ANGLE_AND_TIME, 0x3FFF, 0, 4)
+    #     except usb.core.USBError:
+    #         print "Could not send GET_ANGLE_AND_TIME vendor request."
+    #     else:
+    #         return (int(ret[0]) + 256 * int(ret[1]), int(ret[2]) + 256 * int(ret[3]))
 
-    def get_raw_speed(self):
+    def get_speed_and_position(self):
         try:
-            (angle, time) = self.get_angle_and_time()
+            # (angle, time) = self.get_angle_and_time()
+            angle = self.get_raw_angle();
+            time = self.get_micros();
         except TypeError:
             print "Missed one speed reading"
             return 0
         else:
-            delta_a = self.angle - angle
+            self.delta_t = self.update_prog_time(time)
+            prev_position = self.raw_position
+            print prev_position
+            if (abs(angle - self.angle) < 2**13): # normal
+                self.raw_position = ((self.raw_position >> 14) << 14) + angle
+                print 'normal'
+            elif (angle < self.angle):          # rollover
+                self.raw_position = ((self.raw_position >> 14) << 14) + 0x4000 + angle
+                print 'rollover'
+            else:                               # rollunder
+                self.raw_position = ((self.raw_position >> 14) << 14) - 0x4000 + angle
+                print 'rollunder'
+
             self.angle = angle
-            delta_t = self.total_prog_time - time
-            self.update_prog_time(time)
-            return float(delta_a) / delta_t
+            self.delta_a = self.raw_position - prev_position;
+
+            print self.raw_position
+
+            self.speed = 0.9 * self.speed + 0.1 * (float(self.delta_a) / self.delta_t)
+            # print self.speed
+            return (self.speed, self.raw_position)

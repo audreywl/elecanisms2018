@@ -114,11 +114,11 @@ WORD enc_readReg(WORD address) {
     return result;
 }
 
-void update_angle(void) {
-    WORD inst_angle;
-    inst_angle = enc_readReg((WORD)0x3FFF);
-    angle = (angle >> 6) * 63 + (inst_angle.w >> 6);
-}
+// void update_angle(void) {
+//     WORD inst_angle;
+//     inst_angle = enc_readReg((WORD)0x3FFF);
+//     angle = ((angle * 63) >> 6) + (inst_angle.w >> 6);
+// }
 
 void vendor_requests(void) {
     WORD temp;
@@ -225,7 +225,7 @@ void vendor_requests(void) {
             BD[EP0IN].status = UOWN | DTS | DTSEN;
             break;
         case GET_ANGLE_AND_TIME:
-            temp.w = angle;
+            temp = enc_readReg((WORD)0x3FFF);
             temp2 = get_micros();
             BD[EP0IN].address[0] = temp.b[0];
             BD[EP0IN].address[1] = temp.b[1];
@@ -392,7 +392,7 @@ int16_t main(void) {
 #ifndef USB_INTERRUPT
     usb_service();
 #endif
-    update_angle();
+    // update_angle();
     current = read_analog(A0_AN);
   }
 }
