@@ -68,7 +68,7 @@ class paddletestgui:
             self.encoder_status = tk.Label(self.root, text = 'Current: ?????')
             self.encoder_status.pack(side = tk.TOP)
             self.raw_speed = tk.Label(self.root, text= 'Speed (ticks/us): ?????')
-            seld.raw_speed.pack(side = tk.TOP)
+            self.raw_speed.pack(side = tk.TOP)
             self.update_status()
 
     def set_duty_callback(self, value):
@@ -90,6 +90,7 @@ class paddletestgui:
         self.root.after_cancel(self.update_job)
         self.root.destroy()
         self.dev.close()
+
 def run_test():
     with open('spindown_log4.csv', 'w') as csvfile:
         writer = csv.writer(csvfile)

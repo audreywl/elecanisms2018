@@ -218,14 +218,19 @@ class paddlemodel:
         try:
             ret = self.dev.ctrl_transfer(0xC0, self.GET_ANGLE_AND_TIME, 0, 0, 4)
         except usb.core.USBError:
-            print "Could not send GET_CURRENT vendor request."
+            print "Could not send GET_ANGLE_AND_TIME vendor request."
         else:
-            return (int(ret[0]) + 256 * int(ret[1]), int(ret[2]) + 256 * int(ret[3])
+            return (int(ret[0]) + 256 * int(ret[1]), int(ret[2]) + 256 * int(ret[3]))
 
     def get_raw_speed(self):
-        angle, time = self.get_angle_and_time()
-        delta_a = self.angle - angle
-        self.angle = angle
-        delta_t = self.total_prog_time - time
-        self.update_prog_time(time)
-        return float(delta_a) / delta_t
+        try:
+            (angle, time) = self.get_angle_and_time()
+        except TypeError:
+            print "Missed one speed reading"
+            return 0
+        else:
+            delta_a = self.angle - angle
+            self.angle = angle
+            delta_t = self.total_prog_time - time
+            self.update_prog_time(time)
+            return float(delta_a) / delta_t
