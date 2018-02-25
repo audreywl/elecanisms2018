@@ -33,9 +33,14 @@
 #define ENC_READ_REG              13
 #define GET_MICROS                14
 #define GET_CURRENT               15
+#define GET_ANGLE_AND_TIME        16
+
 
 /* Setup micros variable to count us from program start */
 WORD micros;
+
+/* Setup angle variable for local smoothing*/
+uint16_t angle;
 
 void __attribute__((interrupt, auto_psv)) _T2Interrupt(void) {
     IFS0bits.T2IF = 0;      // lower Timer2 interrupt flag
@@ -113,8 +118,15 @@ WORD enc_readReg(WORD address) {
     return result;
 }
 
+void update_angle(void) {
+    WORD inst_angle;
+    inst_angle = enc_readReg((WORD)0x3FFF);
+    angle = (angle >> 6) * 63 + (inst_angle.w >> 6);
+}
+
 void vendor_requests(void) {
     WORD temp;
+    WORD temp2;
     uint16_t i;
 
     switch (USB_setup.bRequest) {
@@ -214,6 +226,15 @@ void vendor_requests(void) {
             BD[EP0IN].bytecount = 2;
             BD[EP0IN].status = UOWN | DTS | DTSEN;
             break;
+        case GET_ANGLE_AND_TIME:
+            temp.w = angle;
+            temp2 = get_micros();
+            BD[EP0IN].address[0] = temp.b[0];
+            BD[EP0IN].address[1] = temp.b[1];
+            BD[EP0IN].address[2] = temp2.b[0];
+            BD[EP0IN].address[3] = temp2.b[1];
+            BD[EP0IN].bytecount = 4;
+            BD[EP0IN].status = UOWN | DTS | DTSEN;
         default:
             USB_error_flags |= REQUEST_ERROR;
     }
@@ -223,13 +244,11 @@ void vendor_requests(void) {
 /* Read on ADC channel 1 and wait until conversion end */
 void readADC(uint16_t* res) {
   AD1CON1bits.SAMP = 1; // Start sampling
-
   while (AD1CON1bits.DONE != 1) {
     __asm__("nop");
   }
   // move ADC value (masked) to register
-  *res = ADC1BUF0 &= 0xF600;
-
+  *res = ADC1BUF0;
 }
 
 // OC2 ISR for first ADC measurement
@@ -361,5 +380,6 @@ int16_t main(void) {
 #ifndef USB_INTERRUPT
     usb_service();
 #endif
+    update_angle();
   }
 }

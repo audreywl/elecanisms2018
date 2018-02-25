@@ -20,6 +20,7 @@ class paddlemodel:
         self.ENC_READ_REG = 13
         self.GET_MICROS = 14
         self.GET_CURRENT = 15
+        self.GET_ANGLE_AND_TIME = 16
 
         self.dev = usb.core.find(idVendor = 0x6666, idProduct = 0x0003)
         if self.dev is None:
@@ -40,9 +41,11 @@ class paddlemodel:
         self.prog_time = 0;
         self.total_prog_time = 0L;
 
-    def update_prog_time(self):
+        self.angle = 0;
+
+    def update_prog_time(self, raw_prog_time):
         self.last_prog_time = self.prog_time    # Transfer last one
-        self.prog_time = self.get_micros()  # Read new
+        self.prog_time = raw_prog_time  # Take in new
         if (self.prog_time == None): return 0
         if self.prog_time > self.last_prog_time:
             self.total_prog_time += self.prog_time - self.last_prog_time
@@ -173,7 +176,7 @@ class paddlemodel:
     #     else:
     #         return ret
 
-    def get_angle(self):
+    def get_raw_angle(self):
         try:
             ret = self.dev.ctrl_transfer(0xC0, self.ENC_READ_REG, 0x3FFF, 0, 2)
         except usb.core.USBError:
@@ -204,3 +207,25 @@ class paddlemodel:
             return v
         else: return -1
         # return 1;
+
+    def get_angle(self):
+        return self.angle
+
+    def get_time(self):
+        return self.total_prog_time
+
+    def get_angle_and_time(self):
+        try:
+            ret = self.dev.ctrl_transfer(0xC0, self.GET_ANGLE_AND_TIME, 0, 0, 4)
+        except usb.core.USBError:
+            print "Could not send GET_CURRENT vendor request."
+        else:
+            return (int(ret[0]) + 256 * int(ret[1]), int(ret[2]) + 256 * int(ret[3])
+
+    def get_raw_speed(self):
+        angle, time = self.get_angle_and_time()
+        delta_a = self.angle - angle
+        self.angle = angle
+        delta_t = self.total_prog_time - time
+        self.update_prog_time(time)
+        return float(delta_a) / delta_t

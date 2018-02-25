@@ -57,8 +57,8 @@ class paddletestgui:
             self.sw2_status.pack(side = tk.TOP)
             self.sw3_status = tk.Label(self.root, text = 'SW3 is currently ?')
             self.sw3_status.pack(side = tk.TOP)
-            self.a0_status = tk.Label(self.root, text = 'A0 is currently ????')
-            self.a0_status.pack(side = tk.TOP)
+            # self.a0_status = tk.Label(self.root, text = 'A0 is currently ????')
+            # self.a0_status.pack(side = tk.TOP)
             self.duty_status = tk.Label(self.root, text = 'Duty cycle is currently ??%')
             self.duty_status.pack(side = tk.TOP)
             self.micros_status = tk.Label(self.root, text = 'Program Time: ?????')
@@ -67,6 +67,8 @@ class paddletestgui:
             self.encoder_status.pack(side = tk.TOP)
             self.encoder_status = tk.Label(self.root, text = 'Current: ?????')
             self.encoder_status.pack(side = tk.TOP)
+            self.raw_speed = tk.Label(self.root, text= 'Speed (ticks/us): ?????')
+            seld.raw_speed.pack(side = tk.TOP)
             self.update_status()
 
     def set_duty_callback(self, value):
@@ -76,10 +78,12 @@ class paddletestgui:
         self.sw1_status.configure(text = 'SW1 is currently {!s}'.format(self.dev.read_sw1()))
         self.sw2_status.configure(text = 'SW2 is currently {!s}'.format(self.dev.read_sw2()))
         self.sw3_status.configure(text = 'SW3 is currently {!s}'.format(self.dev.read_sw3()))
+        # self.a0_status.configure(text = 'A0 is currently {:04d}'.format(self.dev.read_a0()))
         self.duty_status.configure(text = 'Duty cycle is currently {0:.0f}%'.format(self.dev.get_duty()))
-        self.micros_status.configure(text = 'Program Time: {:08d}'.format(self.dev.update_prog_time()))
+        self.micros_status.configure(text = 'Program Time: {:08d}'.format(self.dev.get_time()))
         self.encoder_status.configure(text = 'Encoder Angle: {0:.0f}'.format(self.dev.get_angle()))
-        self.encoder_status.configure(text = 'Current: {0:.0f}'.format(self.dev.get_current()))
+        self.encoder_status.configure(text = 'Current: {0:04d}'.format(self.dev.get_current()))
+        self.raw_speed.configure(text='Speed (ticks/us): {0:.0f}'.format(self.dev.get_raw_speed()))
         self.update_job = self.root.after(50, self.update_status)
 
     def shut_down(self):
