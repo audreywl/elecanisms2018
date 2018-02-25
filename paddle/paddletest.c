@@ -231,10 +231,11 @@ void vendor_requests(void) {
             temp2 = get_micros();
             BD[EP0IN].address[0] = temp.b[0];
             BD[EP0IN].address[1] = temp.b[1];
-            BD[EP0IN].address[2] = temp2.b[0];
-            BD[EP0IN].address[3] = temp2.b[1];
+            BD[EP0IN].address[2] = temp2.b[2];
+            BD[EP0IN].address[3] = temp2.b[3];
             BD[EP0IN].bytecount = 4;
             BD[EP0IN].status = UOWN | DTS | DTSEN;
+            break;
         default:
             USB_error_flags |= REQUEST_ERROR;
     }

@@ -20,10 +20,7 @@ class paddlemodel:
         self.ENC_READ_REG = 13
         self.GET_MICROS = 14
         self.GET_CURRENT = 15
-<<<<<<< HEAD
         self.GET_ANGLE_AND_TIME = 16
-=======
->>>>>>> af101ff59d84a284542a4582dd57f2f09a7b89b4
 
         self.dev = usb.core.find(idVendor = 0x6666, idProduct = 0x0003)
         if self.dev is None:
@@ -195,11 +192,7 @@ class paddlemodel:
         else:
             return int(ret[0]) + 256 * int(ret[1])
 
-<<<<<<< HEAD
     def get_current_val(self):
-=======
-    def get_current(self):
->>>>>>> af101ff59d84a284542a4582dd57f2f09a7b89b4
         try:
             ret = self.dev.ctrl_transfer(0xC0, self.GET_CURRENT, 0, 0, 2)
         except usb.core.USBError:
@@ -209,7 +202,7 @@ class paddlemodel:
 
     def get_current(self):
         v = self.get_current_val()
-        print v
+        # print v
         if type(v) is int:
             return v
         else: return -1
