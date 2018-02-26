@@ -229,8 +229,8 @@ class paddlemodel:
 
     def get_speed_and_position(self):
         try:
-            # (angle, time) = self.get_angle_and_time()
             angle = self.get_raw_angle();
+            # print angle
             time = self.get_micros();
         except TypeError:
             print "Missed one speed reading"

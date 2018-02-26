@@ -123,13 +123,13 @@ class PIDControl:
         self.dev = paddletest.paddlemodel()
         #self.dState = 0
         self.iState = 0
-        self.iMax = 90
-        self.iMin = -90
-        self.pGain = -.004
+        self.iMax = 20000
+        self.iMin = -20000
+        self.pGain = -.005
         self.iGain = -.001
         #self.dGain = 100
         self.speed, self.position = self.dev.get_speed_and_position()
-        self.target = 0
+        self.target = self.position
 
     # def get_error(self):
     #     positions = []
@@ -153,21 +153,27 @@ class PIDControl:
     def update_pid(self):
         position, error = self.get_error()
         pTerm = self.pGain * error
+        if (pTerm > 100):
+            pTerm = 100
+        if (pTerm < -100):
+            pTerm = -100
         iState = self.iState
         iState += error
         if iState > self.iMax:
             iState = self.iMax
         elif iState < self.iMin:
             iState = self.iMin
+
         iTerm = self.iGain * iState
         # dTerm = self.dGain * (self.dState - position)
         # self.dState = dState
         self.iState = iState
         #drive = pTerm + iTerm + dTerm
-        drive = pTerm + iTerm
+        # drive = pTerm + iTerm
+        drive = pTerm
         #duty = (drive/45.5)/1000.0 #convert to degrees, then divide by top speed of 100000 deg/.1 sec and multiply by 100 for duty cycle
         self.dev.set_duty(drive)
-        # print position, error, drive
+        print position, error, drive
         time.sleep(.01)
 
 def update_control(pid_obj):
@@ -177,17 +183,17 @@ def update_control(pid_obj):
 if __name__=='__main__':
     # run_test();
 
-    gui = paddletestgui()
-    gui.root.mainloop()
+    # gui = paddletestgui()
+    # gui.root.mainloop()
+#
+    control = PIDControl()
 
-    # control = PIDControl()
-    #
-    # control_thread = threading.Thread(target=update_control, args=(control,)) # Set up daemon thread to run controller
-    # control_thread.setDaemon(True)
-    # control_thread.start()
-    #
-    # time.sleep(2)
-    #
+    control_thread = threading.Thread(target=update_control, args=(control,)) # Set up daemon thread to run controller
+    control_thread.setDaemon(True)
+    control_thread.start()
+
+    time.sleep(2)
+
     # control.target = control.position + 900 # Step functio
-    # while True:
-    #     pass
+    while True:
+        pass

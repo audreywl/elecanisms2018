@@ -322,9 +322,9 @@ int16_t main(void) {
   SPI2STAT = 0x8000;
 
 /* Configure OC1 for PWM */
-  OC1CON1bits.OCTSEL = 0x111;   // configure OC1 module to use the peripheral
+  OC1CON1bits.OCTSEL = 0b111;   // configure OC1 module to use the peripheral
                                 //   clock (i.e., FCY, OCTSEL<2:0> = 0b111) and
-  OC1CON1bits.OCM = 0x110;      //   and to operate in edge-aligned PWM mode
+  OC1CON1bits.OCM = 0b110;      //   and to operate in edge-aligned PWM mode
                                 //   (OCM<2:0> = 0b110)
   OC1CON2bits.OCTRIG = 0;       // configure OC1 module to syncrhonize to itself
   OC1CON2bits.SYNCSEL = 0x1F;   //   (i.e., OCTRIG = 0 and SYNCSEL<4:0> = 0b11111)
@@ -335,12 +335,12 @@ int16_t main(void) {
   OC1R = 0;                     // set default duty cycle to 0
 
 /* Configure OC2 for reverse direction PWM, synch to OC1 */
-  OC2CON1bits.OCTSEL = 0x111;   // configure OC2 module to use the peripheral
+  OC2CON1bits.OCTSEL = 0b111;   // configure OC2 module to use the peripheral
                                 //   clock (i.e., FCY, OCTSEL<2:0> = 0b111) and
-  OC2CON1bits.OCM = 0x110;      //   and to operate in edge-aligned PWM mode
+  OC2CON1bits.OCM = 0b110;      //   and to operate in edge-aligned PWM mode
                                 //   (OCM<2:0> = 0b110)
   OC2CON2bits.OCTRIG = 0;       // configure OC2 module to syncrhonize to OC1
-  OC2CON2bits.SYNCSEL = 0x1;    //   (i.e., OCTRIG = 0 and SYNCSEL<4:0> = 0b00001)
+  OC2CON2bits.SYNCSEL = 0b1;    //   (i.e., OCTRIG = 0 and SYNCSEL<4:0> = 0b00001)
 
   OC2RS = PWM_PERIOD;           // configure period register to
                                 //   get a frequency of 2kHz
@@ -348,26 +348,26 @@ int16_t main(void) {
   OC2R = 0;                     // set default duty cycle to 0
 
 // /* Configure OC3 for ADC reading at end of duty cycle */
-//   OC3CON1bits.OCTSEL = 0x111;   // configure OC3 module to use the peripheral
+//   OC3CON1bits.OCTSEL = 0b111;   // configure OC3 module to use the peripheral
 //                                 //   clock (i.e., FCY, OCTSEL<2:0> = 0b111) and
-//   OC3CON1bits.OCM = 0x111;      //   and to operate in center-aligned PWM mode
+//   OC3CON1bits.OCM = 0b111;      //   and to operate in center-aligned PWM mode
 //                                 //   (OCM<2:0> = 0b111)
 //   OC3CON2bits.OCTRIG = 0;       // configure OC3 module to syncrhonize to OC1
-//   OC3CON2bits.SYNCSEL = 0x1;    //   (i.e., OCTRIG = 0 and SYNCSEL<4:0> = 0b00001)
+//   OC3CON2bits.SYNCSEL = 0b1;    //   (i.e., OCTRIG = 0 and SYNCSEL<4:0> = 0b00001)
 //
 //   OC3R = (PWM_PERIOD >> 2);     // Set PWM pin high somewhere in middle (interrupt is on falling edge)
 //   OC3RS = PWM_PERIOD - ADC_PERIOD;  // set interrupt match value to PWM_PERIOD - ADC_PERIOD
 //
 //   OC3TMR = 0;                   // set OC3 timer count to 0
 //   IEC1bits.OC3IE = 1;           // Enable OC3 interrupts
-
-// /* Configure OC3 for ADC reading at end of duty cycle */
-//   OC4CON1bits.OCTSEL = 0x111;   // configure OC4 module to use the peripheral
+//
+// /* Configure OC4 for ADC reading at end of duty cycle */
+//   OC4CON1bits.OCTSEL = 0b111;   // configure OC4 module to use the peripheral
 //                                 //   clock (i.e., FCY, OCTSEL<2:0> = 0b111) and
-//   OC4CON1bits.OCM = 0x111;      //   and to operate in center-aligned PWM mode
-//                                 //   (OCM<2:0> = 0b110)
+//   OC4CON1bits.OCM = 0b111;      //   and to operate in center-aligned PWM mode
+//                                 //   (OCM<2:0> = 0b111)
 //   OC4CON2bits.OCTRIG = 0;       // configure OC4 module to syncrhonize to OC1
-//   OC4CON2bits.SYNCSEL = 0x1;    //   (i.e., OCTRIG = 0 and SYNCSEL<4:0> = 0b00001)
+//   OC4CON2bits.SYNCSEL = 0b1;    //   (i.e., OCTRIG = 0 and SYNCSEL<4:0> = 0b00001)
 //
 //   OC4R = (PWM_PERIOD >> 2);     // Set PWM pin high somewhere in middle (interrupt is on falling edge)
 //   OC4RS = 0;  // set interrupt match value to PWM_PERIOD - ADC_PERIOD
