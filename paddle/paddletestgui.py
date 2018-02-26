@@ -180,13 +180,71 @@ def update_control(pid_obj):
     while True:
         pid_obj.update_pid()
 
+class WallControl:
+    def __init__(self):
+        self.dev = paddletest.paddlemodel()
+        self.speed, self.position = self.dev.get_speed_and_position()
+        self.target = self.position + 1000
+
+    def get_error(self):
+        self.speed, self.position = self.dev.get_speed_and_position()
+        error = self.target - self.position
+        return (self.position, error)
+
+    def update_pid(self):
+        position, error = self.get_error()
+        if (position > self.target):
+            pTerm = 100
+        else:
+            pTerm = 0
+
+        drive = pTerm
+
+        self.dev.set_duty(drive)
+
+        print position, error, drive
+        time.sleep(.01)
+
+class DamperControl:
+    def __init__(self):
+        self.dev = paddletest.paddlemodel()
+        self.speed, self.position = self.dev.get_speed_and_position()
+
+    def update_pid(self):
+        self.speed, self.position = self.dev.get_speed_and_position()
+        drive = self.speed * 70
+
+        self.dev.set_duty(drive)
+
+        print self.position, drive
+        time.sleep(.01)
+
+class TextureControl:
+    def __init__(self):
+        self.dev = paddletest.paddlemodel()
+        self.speed, self.position = self.dev.get_speed_and_position()
+        self.bump_period = 2500
+
+    def update_pid(self):
+        self.speed, self.position = self.dev.get_speed_and_position()
+        drive = (self.position % self.bump_period) * 40 / 2500 # max 20 percent in any direction
+        print (self.position % self.bump_period)
+        self.dev.set_duty(drive)
+
+        print self.position, drive
+        time.sleep(.01)
+
+def update_control(ctrl_obj):
+    while True:
+        ctrl_obj.update_pid()
+
 if __name__=='__main__':
     # run_test();
 
     # gui = paddletestgui()
     # gui.root.mainloop()
 #
-    control = PIDControl()
+    control = TextureControl()
 
     control_thread = threading.Thread(target=update_control, args=(control,)) # Set up daemon thread to run controller
     control_thread.setDaemon(True)
