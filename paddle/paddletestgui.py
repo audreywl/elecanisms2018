@@ -63,6 +63,8 @@ class paddletestgui:
             self.duty_status.pack(side = tk.TOP)
             self.raw_speed = tk.Label(self.root, text= 'Speed (ticks/us): ?????')
             self.raw_speed.pack(side = tk.TOP)
+            self.position = tk.Label(self.root, text='Position (ticks): ?????')
+            self.position.pack(side=tk.TOP)
             self.micros_status = tk.Label(self.root, text = 'Program Time: ?????')
             self.micros_status.pack(side = tk.TOP)
             self.encoder_status = tk.Label(self.root, text = 'Encoder Angle: ?????')
@@ -80,7 +82,9 @@ class paddletestgui:
         self.sw3_status.configure(text = 'SW3 is currently {!s}'.format(self.dev.read_sw3()))
         # self.a0_status.configure(text = 'A0 is currently {:04d}'.format(self.dev.read_a0()))
         self.duty_status.configure(text = 'Duty cycle is currently {0:.0f}%'.format(self.dev.get_duty()))
-        # self.raw_speed.configure(text='Speed: {0:.05f} Position: {0:d}'.format(self.dev.get_speed_and_position()))
+        speed, position = self.dev.get_speed_and_position()
+        self.raw_speed.configure(text='Speed: {0:.05f}'.format(speed))
+        self.position.configure(text='Position: {:08d}'.format(position))
         self.dev.get_speed_and_position()
         self.micros_status.configure(text = 'Program Time: {:08d}'.format(self.dev.get_time()))
         self.encoder_status.configure(text = 'Encoder Angle: {0:.0f}'.format(self.dev.get_raw_angle()))
@@ -124,20 +128,28 @@ class PIDControl:
         self.pGain = -.004
         self.iGain = -.001
         #self.dGain = 100
-        self.position = self.dev.get_angle()
+        self.speed, self.position = self.dev.get_speed_and_position()
+        self.target = 0
+
+    # def get_error(self):
+    #     positions = []
+    #     for i in range(0,10):
+    #         position = self.dev.get_angle()
+    #         positions.append(position)
+    #         time.sleep(.001)
+    #     position = sum(positions)/10
+    #     error = self.position - position
+    #     if error > 10000:
+    #         error = self.position - (position+16384)
+    #     elif error < -10000:
+    #         error = (self.position + 16384) - position
+    #     return (position, error)
+
     def get_error(self):
-        positions = []
-        for i in range(0,10):
-            position = self.dev.get_angle()
-            positions.append(position)
-            time.sleep(.001)
-        position = sum(positions)/10
-        error = self.position - position
-        if error > 10000:
-            error = self.position - (position+16384)
-        elif error < -10000:
-            error = (self.position + 16384) - position
-        return (position, error)
+        self.speed, self.position = self.dev.get_speed_and_position()
+        error = self.target - self.position
+        return (self.position, error)
+
     def update_pid(self):
         position, error = self.get_error()
         pTerm = self.pGain * error
@@ -155,19 +167,27 @@ class PIDControl:
         drive = pTerm + iTerm
         #duty = (drive/45.5)/1000.0 #convert to degrees, then divide by top speed of 100000 deg/.1 sec and multiply by 100 for duty cycle
         self.dev.set_duty(drive)
-        print position, error, drive
+        # print position, error, drive
         time.sleep(.01)
 
-
+def update_control(pid_obj):
+    while True:
+        pid_obj.update_pid()
 
 if __name__=='__main__':
     # run_test();
+
     gui = paddletestgui()
     gui.root.mainloop()
+
     # control = PIDControl()
-    # new_position = control.position + 9000
-    # if new_position > 16384:
-    #     new_position = new_position-16384
-    # control.position = new_position
+    #
+    # control_thread = threading.Thread(target=update_control, args=(control,)) # Set up daemon thread to run controller
+    # control_thread.setDaemon(True)
+    # control_thread.start()
+    #
+    # time.sleep(2)
+    #
+    # control.target = control.position + 900 # Step functio
     # while True:
-    #     control.update_pid()
+    #     pass

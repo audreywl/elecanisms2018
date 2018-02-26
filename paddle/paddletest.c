@@ -346,21 +346,20 @@ int16_t main(void) {
                                 //   get a frequency of 2kHz
   OC2TMR = 0;                   // set OC2 timer count to 0
   OC2R = 0;                     // set default duty cycle to 0
-  IEC0bits.OC2IE = 1;           // Enable OC2 interrupts
 
-/* Configure OC3 for ADC reading at end of duty cycle */
-  OC3CON1bits.OCTSEL = 0x111;   // configure OC3 module to use the peripheral
-                                //   clock (i.e., FCY, OCTSEL<2:0> = 0b111) and
-  OC3CON1bits.OCM = 0x111;      //   and to operate in center-aligned PWM mode
-                                //   (OCM<2:0> = 0b111)
-  OC3CON2bits.OCTRIG = 0;       // configure OC3 module to syncrhonize to OC1
-  OC3CON2bits.SYNCSEL = 0x1;    //   (i.e., OCTRIG = 0 and SYNCSEL<4:0> = 0b00001)
-
-  OC3R = (PWM_PERIOD >> 2);     // Set PWM pin high somewhere in middle (interrupt is on falling edge)
-  OC3RS = PWM_PERIOD - ADC_PERIOD;  // set interrupt match value to PWM_PERIOD - ADC_PERIOD
-
-  OC3TMR = 0;                   // set OC3 timer count to 0
-  IEC1bits.OC3IE = 1;           // Enable OC3 interrupts
+// /* Configure OC3 for ADC reading at end of duty cycle */
+//   OC3CON1bits.OCTSEL = 0x111;   // configure OC3 module to use the peripheral
+//                                 //   clock (i.e., FCY, OCTSEL<2:0> = 0b111) and
+//   OC3CON1bits.OCM = 0x111;      //   and to operate in center-aligned PWM mode
+//                                 //   (OCM<2:0> = 0b111)
+//   OC3CON2bits.OCTRIG = 0;       // configure OC3 module to syncrhonize to OC1
+//   OC3CON2bits.SYNCSEL = 0x1;    //   (i.e., OCTRIG = 0 and SYNCSEL<4:0> = 0b00001)
+//
+//   OC3R = (PWM_PERIOD >> 2);     // Set PWM pin high somewhere in middle (interrupt is on falling edge)
+//   OC3RS = PWM_PERIOD - ADC_PERIOD;  // set interrupt match value to PWM_PERIOD - ADC_PERIOD
+//
+//   OC3TMR = 0;                   // set OC3 timer count to 0
+//   IEC1bits.OC3IE = 1;           // Enable OC3 interrupts
 
 // /* Configure OC3 for ADC reading at end of duty cycle */
 //   OC4CON1bits.OCTSEL = 0x111;   // configure OC4 module to use the peripheral

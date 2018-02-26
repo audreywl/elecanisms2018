@@ -44,7 +44,8 @@ class paddlemodel:
         self.delta_t = 0
         self.delta_a = 0
         self.speed = 0.0
-        self.raw_position = 2**13
+        self.raw_position = 0
+        self.position_offset = self.get_raw_angle()
 
     def update_prog_time(self, raw_prog_time):
         self.last_prog_time = self.prog_time    # Transfer last one
@@ -237,22 +238,22 @@ class paddlemodel:
         else:
             self.delta_t = self.update_prog_time(time)
             prev_position = self.raw_position
-            print prev_position
+            # print prev_position
             if (abs(angle - self.angle) < 2**13): # normal
                 self.raw_position = ((self.raw_position >> 14) << 14) + angle
-                print 'normal'
+                # print 'normal'
             elif (angle < self.angle):          # rollover
                 self.raw_position = ((self.raw_position >> 14) << 14) + 0x4000 + angle
-                print 'rollover'
+                # print 'rollover'
             else:                               # rollunder
                 self.raw_position = ((self.raw_position >> 14) << 14) - 0x4000 + angle
-                print 'rollunder'
+                # print 'rollunder'
 
             self.angle = angle
             self.delta_a = self.raw_position - prev_position;
 
-            print self.raw_position
+            # print self.raw_position
 
             self.speed = 0.9 * self.speed + 0.1 * (float(self.delta_a) / self.delta_t)
             # print self.speed
-            return (self.speed, self.raw_position)
+            return (self.speed, self.raw_position - self.position_offset)
