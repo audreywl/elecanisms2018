@@ -96,27 +96,7 @@ class paddletestgui:
         self.root.destroy()
         self.dev.close()
 
-def run_test():
-    with open('spindown_log4.csv', 'w') as csvfile:
-        writer = csv.writer(csvfile)
-        dev = paddletest.paddlemodel()
 
-        t = threading.Thread(target=log_data, args=(dev,writer,)) # Set up daemon thread to log data
-        t.setDaemon(True)
-        t.start()                                                 # Start logging data
-
-        dev.set_duty(100)                                  # Set power to max
-        print "on"
-        time.sleep(3)                                             # Wait for spin up
-        print "waiting"
-        dev.set_duty(0)                                    # Set power to 0
-        print "off"
-        time.sleep(10)                                            # Wait for spin down
-        print "spindown"
-
-def log_data(dev, writer): # Daemon function that will log data as often as possible
-    while True:
-        writer.writerow([dev.update_prog_time(), dev.get_angle()])
 
 class PIDControl:
     def __init__(self):
@@ -234,21 +214,113 @@ class TextureControl:
         print self.position, drive
         time.sleep(.01)
 
-def update_control(ctrl_obj):
+
+class paddlecontrolgui:
+
+    def __init__(self, control=0):
+        self.dev = paddletest.paddlemodel()
+        self.speed, self.position = self.dev.get_speed_and_position()
+        self.bump_period = 2500
+        self.control = control
+        self.target = self.position + 1000
+        self.time = 0
+
+        if self.dev.dev >= 0:
+            self.update_job = None
+            self.root = tk.Tk()
+            self.root.title('Paddle Test GUI')
+            self.root.protocol('WM_DELETE_WINDOW', self.shut_down)
+            fm = tk.Frame(self.root)
+            tk.Button(fm, text = 'Damper', command = lambda: self.change_control(0)).pack(side = tk.LEFT)
+            tk.Button(fm, text = 'Texture', command = lambda: self.change_control(1)).pack(side = tk.LEFT)
+            tk.Button(fm, text = 'Wall', command = lambda: self.change_control(2)).pack(side = tk.LEFT)
+            fm.pack(side = tk.TOP)
+            self.micros_status = tk.Label(self.root, text = 'Program Time: ?????')
+            self.micros_status.pack(side = tk.TOP)
+            self.update_status()
+
+    def change_control(self, new):
+        self.control = new
+    def update_status(self):
+        if self.control == 0:
+            self.update_damper()
+        elif self.control == 1:
+            self.update_texture()
+        elif self.control == 2:
+            self.update_wall()
+        self.time =self.dev.get_time()
+        self.micros_status.configure(text = 'Program Time: {:08d}'.format(self.time))
+        self.update_job = self.root.after(25, self.update_status)
+
+    def update_texture(self):
+        self.speed, self.position = self.dev.get_speed_and_position()
+        drive = (self.position % self.bump_period) * 40 / 2500 # max 20 percent in any direction
+        print (self.position % self.bump_period)
+        self.dev.set_duty(drive)
+
+        print self.position, drive
+        time.sleep(.01)
+
+    def update_damper(self):
+        self.speed, self.position = self.dev.get_speed_and_position()
+        drive = self.speed * 70
+
+        self.dev.set_duty(drive)
+
+        print self.position, drive
+        time.sleep(.01)
+
+    def update_wall(self):
+        position, error = self.get_error()
+        if (position > self.target):
+            pTerm = 100
+        else:
+            pTerm = 0
+
+        drive = pTerm
+
+        self.dev.set_duty(drive)
+
+        print position, error, drive
+        time.sleep(.01)
+
+    def get_error(self):
+        self.speed, self.position = self.dev.get_speed_and_position()
+        error = self.target - self.position
+        return (self.position, error)
+
+    def set_duty_callback(self, value):
+        self.dev.set_duty(float(value))
+
+    def shut_down(self):
+        self.root.after_cancel(self.update_job)
+        self.root.destroy()
+        self.dev.close()
+def run_test():
+    with open('control_log.csv', 'w') as csvfile:
+        writer = csv.writer(csvfile)
+        dev = paddlecontrolgui()
+
+        t = threading.Thread(target=log_data, args=(dev,writer,)) # Set up daemon thread to log data
+        t.setDaemon(True)
+        t.start()                                                 # Start logging data
+
+        dev.root.mainloop()
+
+def log_data(dev, writer): # Daemon function that will log data
     while True:
-        ctrl_obj.update_pid()
+        writer.writerow([dev.time, dev.position, dev.speed])
+        time.sleep(.01)
 
 if __name__=='__main__':
-    # run_test();
+    run_test();
 
-    # gui = paddletestgui()
+    # gui = paddlecontrolgui()
     # gui.root.mainloop()
-#
-    control = TextureControl()
 
-    control_thread = threading.Thread(target=update_control, args=(control,)) # Set up daemon thread to run controller
-    control_thread.setDaemon(True)
-    control_thread.start()
+    # control_thread = threading.Thread(target=update_control, args=(control,)) # Set up daemon thread to run controller
+    # control_thread.setDaemon(True)
+    # control_thread.start()
 
     time.sleep(2)
 
