@@ -203,7 +203,7 @@ class TextureControl:
     def __init__(self):
         self.dev = paddletest.paddlemodel()
         self.speed, self.position = self.dev.get_speed_and_position()
-        self.bump_period = 2500
+        self.bump_period = 10000
 
     def update_pid(self):
         self.speed, self.position = self.dev.get_speed_and_position()
@@ -229,6 +229,7 @@ class paddlecontrolgui:
         self.pGain = -.005
         self.iGain = -.001
         self.time = 0
+        self.drive = 0
 
         if self.dev.dev >= 0:
             self.update_job = None
@@ -264,6 +265,7 @@ class paddlecontrolgui:
         self.speed, self.position = self.dev.get_speed_and_position()
         drive = (self.position % self.bump_period) * 40 / 2500 # max 20 percent in any direction
         print (self.position % self.bump_period)
+        self.drive = drive
         self.dev.set_duty(drive)
 
         print self.position, drive
@@ -272,7 +274,7 @@ class paddlecontrolgui:
     def update_damper(self):
         self.speed, self.position = self.dev.get_speed_and_position()
         drive = self.speed * 70
-
+        self.drive = drive
         self.dev.set_duty(drive)
 
         print self.position, drive
@@ -284,12 +286,9 @@ class paddlecontrolgui:
             pTerm = 100
         else:
             pTerm = 0
-
         drive = pTerm
-
+        self.drive = drive
         self.dev.set_duty(drive)
-
-        print position, error, drive
         time.sleep(.01)
 
     def update_spring(self):
@@ -314,6 +313,7 @@ class paddlecontrolgui:
         # drive = pTerm + iTerm
         drive = pTerm
         #duty = (drive/45.5)/1000.0 #convert to degrees, then divide by top speed of 100000 deg/.1 sec and multiply by 100 for duty cycle
+        self.drive = drive
         self.dev.set_duty(drive)
         print position, error, drive
         time.sleep(.01)
@@ -331,9 +331,9 @@ class paddlecontrolgui:
         self.root.destroy()
         self.dev.close()
 def run_test():
-    with open('control_log.csv', 'w') as csvfile:
+    with open('control_log_damper.csv', 'w') as csvfile:
         writer = csv.writer(csvfile)
-        dev = paddlecontrolgui()
+        dev = paddlecontrolgui(0)
 
         t = threading.Thread(target=log_data, args=(dev,writer,)) # Set up daemon thread to log data
         t.setDaemon(True)
@@ -343,7 +343,7 @@ def run_test():
 
 def log_data(dev, writer): # Daemon function that will log data
     while True:
-        writer.writerow([dev.time, dev.position, dev.speed])
+        writer.writerow([dev.time, dev.speed, dev.drive])
         time.sleep(.01)
 
 if __name__=='__main__':
